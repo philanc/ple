@@ -51,14 +51,15 @@ Term functions:
 ```
 clear()     -- clear screen
 cleareol()  -- clear to end of line
-golc(l, c)  -- go to line l, column c
+golc(l, c)  -- move the cursor to line l, column c
 up(n)
 down(n)
 right(n)
 left(n)     -- move the cursor by n positions (default to 1)
 color(f, b, m)
-            -- change the written characters color (foreground color, 
-		       background color, modifier)
+            -- change the color used to write characters
+			   (foreground color, background color, modifier)
+			   see term.colors
 hide()
 show()      -- hide or show the cursor
 save()
