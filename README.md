@@ -47,6 +47,46 @@ The input function reads and parses the escape sequences sent by function keys (
 
 This module is at the beginning of the ple.lua file. It can be easily extracted and used independantly for other applications. It does not use any other external library.  The only reason for embedding it within ple.lua is to deliver the editor as a single lua file.
 
+Term functions:
+```
+clear()     -- clear screen
+cleareol()  -- clear to end of line
+golc(l, c)  -- go to line l, column c
+up(n)
+down(n)
+right(n)
+left(n)     -- move the cursor by n positions (default to 1)
+color(f, b, m)
+            -- change the written characters color (foreground color, 
+		       background color, modifier)
+hide()
+show()      -- hide or show the cursor
+save()
+restore()   -- save and restore the position of the cursor
+reset()     -- reset the terminal (colors, cursor position)
+
+input()     -- input iterator (coroutine-based)
+		       return a "next key" function that can be iteratively called 
+			   to read a key (escape sequences returned by function keys 
+			   are parsed)
+rawinput()  -- same, but escape sequences are not parsed.
+getcurpos() -- return the current position of the cursor
+getscrlc()  -- return the dimensions of the screen 
+               (number of lines and columns)
+keyname()   -- return a printable name for any key
+               - key names in term.keys for function keys,
+			   - control characters are represented as "^A"
+			   - the character itself for other keys
+
+tty mode management functions
+
+setrawmode()       -- set the terminal in raw mode
+setsanemode()      -- set the terminal in a default "sane mode"
+savemode()         -- get the current mode as a string
+restoremode(mode)  -- restore a mode saved by savemode()
+
+```
+
 ### License
 
 This code is published under a BSD license. Fell free to fork!
