@@ -14,7 +14,7 @@ PLE has been inspired by Antirez' [Kilo](https://github.com/antirez/kilo) editor
 
 ### Limitations
 
-PLE is ***Work in Progress*** code! It is not intended to be used for anything serious, at least for the moment.
+PLE is ***Work in Progress***! It is not intended to be used for anything serious, at least for the moment.
 
 The major limitations the brave tester should consider are:
 - no undo/redo (yet)
