@@ -6,7 +6,7 @@ A small text editor for the Unix console or standard terminal emulators.
 
 Have a small, self-contained text editor that does not rely on any external library (no termcap, terminfo, ncurses, no POSIX libraries).
 
-This is not intended to compete with large established editors (emacs, vim) or smaller ones (joe, zile) or, in the Lua world, the sophisticated Textadept with a ncurse interface.  PLE is rather intended to be used with a statically compiled Lua in the sort of environment where you usually find busybox.
+This is not intended to compete with large established editors (emacs, vim) or smaller ones (joe, zile) or, for example in the Lua world, the sophisticated Textadept with a ncurse interface.  PLE is rather intended to be used with a statically compiled Lua in the sort of environment where you usually find busybox.
 
 The editor is entirely written in Lua.  The only external dependencies are the terminal itself which must support basic ANSI sequences and the unix command `stty` which is used to save/restore the terminal mode, and set the terminal in raw mode (required to read keys one at a time).
 
@@ -14,7 +14,7 @@ PLE has been inspired by Antirez' [Kilo](https://github.com/antirez/kilo) editor
 
 ### Limitations
 
-PLE is *Work in Progress* code! It is not intended to be used for anything serious, at least for the moment.
+PLE is ***Work in Progress*** code! It is not intended to be used for anything serious, at least for the moment.
 
 The major limitations the brave tester should consider are:
 - no undo/redo (yet)
@@ -30,7 +30,7 @@ The major limitations the brave tester should consider are:
 On the other hand, the editor already support:
 - a keybinding  a la Emacs (but much limited!)
 - basic editing functions.
-- selection, selection highlight, cut and paste (wipe and yank in emacs parlance)
+- selection, selection highlight, cut and paste (mark, wipe and yank in emacs parlance)
 - multiple buffers (but just one window at a time for the moment)
 - read, write, save files.
 
@@ -41,11 +41,15 @@ The `term` module includes all the basic functionnalities to display strings in 
 
 The origin of the term module is some code [contributed](http://lua-users.org/lists/lua-l/2009-12/msg00937.html) by Luiz Henrique de Figueiredo on the Lua mailing list some time ago.
 
-I complemented it with some functions for input, getting the cursor position or the screen dimension, and stty-based mode handling .
+I added some functions for input, getting the cursor position or the screen dimension, and stty-based mode handling .
 
-The input function read and parses the escape sequences sent by function keys (arrows, F1-F12, insert, delete, etc.). See the definitions in `term.keys`.
+The input function reads and parses the escape sequences sent by function keys (arrows, F1-F12, insert, delete, etc.). See the definitions in `term.keys`.
 
 This module is at the beginning of the ple.lua file. It can be easily extracted and used independantly for other applications. It does not use any other external library.  The only reason for embedding it within ple.lua is to deliver the editor as a single lua file.
+
+### License
+
+This code is published under a BSD license. Fell free to fork!
 
 
 
