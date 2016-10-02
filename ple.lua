@@ -1,7 +1,16 @@
--- editfile.lua
--- !!! WORK IN PROGRESS !!!
--- 
+-- Copyright (c) 2016  Phil Leblanc  -- see LICENSE file
+
 ------------------------------------------------------------------------
+--[[  ple - a Pure Lua Editor  		!!! WORK IN PROGRESS !!!
+
+
+
+License: BSD
+
+https://github.com/philanc/ple
+
+]]
+
 -- some local definitions (used by the module term and/or by the editor
 
 local strf = string.format
