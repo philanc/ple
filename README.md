@@ -1,6 +1,6 @@
 # PLE - a  Pure Lua Editor
 
-A small text editor for the Unix console or standard terminal emulators. 
+A small, self-contained text editor for the Unix console or standard terminal emulators. 
 
 ### Objective
 
