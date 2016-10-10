@@ -24,6 +24,7 @@ The major limitations the brave tester should consider are:
 - no word- or sentence- or paragraph-based movement.
 - no prompt for unsaved files at exit.
 - no provision for automatic backup files.
+- no automatic redimensioning of windows for X terminals (no SIGWINCH handling)
 - no syntax coloring.
 - probably many others things that you expect from a text editor!
 
