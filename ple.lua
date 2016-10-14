@@ -502,6 +502,24 @@ local function readstr(prompt)
 	end--while
 end --readstr
 
+local function readchar(prompt, charpat)
+	-- display prompt on the last screen line, read a char
+	-- if ^G then return nil
+	-- return the key as a char only if it matches charpat
+	-- ignore all non printable ascii keys and non matching chars
+	msg(prompt)
+	editor.redisplay(buf) -- ensure cursor stays in buf
+	while true do
+		k = editor.nextk()
+		if k == 7 then return nil end -- ^G - abort
+		if (k >= 32 and k <127) then
+			local ch = char(k)
+			if ch:match(charpat) then return ch end
+		end
+		-- ignore all other keys
+	end--while
+end --readkey
+
 local function status(m)
 	-- display a status string on top screen line
 	m = pad(m, editor.scrc)
@@ -615,6 +633,9 @@ local function fullredisplay()
 	buf.chgd = true
 	redisplay(buf)
 end --fullredisplay
+
+editor.redisplay = redisplay
+editor.fullredisplay = fullredisplay
 
 ------------------------------------------------------------------------
 -- BUFFER AND CURSOR MANIPULATION 
@@ -801,7 +822,10 @@ function e.ctrlx()
 	end
 end--actrlx
 
-function e.searchagain()
+function e.searchagain(actfn)
+	-- search editor.pat. If found, execute actfn
+	-- default action is to display a message "found!")
+	-- on success, return the result of actfn() or true.
 	if not editor.pat then 
 		msg("no string to search")
 		return nil
@@ -810,11 +834,15 @@ function e.searchagain()
 	while true do
 		local l, cj = getline()
 		local j = l:find(editor.pat, cj+2, true) --plain text search
-		if j then 
+		if j then --found
 			setcurj(j-1)
-			msg("found!")
-			return true
-		end
+			if actfn then 
+				return actfn()
+			else
+				msg("found!")
+				return true
+			end
+		end -- found
 		if not (curdown() and curhome()) then
 			break -- at end of file and not found yet
 		end
@@ -825,8 +853,63 @@ end
 
 function e.search()
 	editor.pat = readstr("Search: ")
+	if not editor.pat then 
+		msg("aborted.")
+		return
+	end
 	return e.searchagain()
 end
+
+function e.replaceagain()
+	local replall = false -- true if user selected "replace (a)ll"
+	local n = 0 -- number of replaced instances
+	function replatcur()
+		-- replace at cursor (called only when editor.pat is found
+		-- at cursor)
+		local l, cj = getline()
+		local l1, l2 = l:sub(1, cj), l:sub(cj + #editor.pat + 1)
+		setline(l1 .. editor.patrepl .. l2)
+		n = n + 1
+		return true
+	end--replatcur
+	function replfn()
+		-- return true to continue, nil/false to stop
+		if replall then 
+			return replatcur()
+		else
+			local ch = readchar(
+				"replace? (q)uit (y)es (n)o (a)ll (^G) ", "[anqy]")
+			if not ch then return nil end
+			if ch == "a" then -- replace all
+				replall = true
+				return replatcur()
+			elseif ch == "y" then -- replace
+				return replatcur()
+			elseif ch == "n" then -- continue
+				return true
+			else -- assume q (quit)
+				return nil
+			end
+		end
+	end--replfn
+	while e.searchagain(replfn) do end
+	msg(strf("replaced %d instance(s)", n))
+end--replaceagain
+
+function e.replace()
+	editor.pat = readstr("Search: ")
+	if not editor.pat then 
+		msg("aborted.")
+		return
+	end
+	editor.patrepl = readstr("Replace with: ")
+	if not editor.patrepl then 
+		msg("aborted.")
+		return
+	end
+	return e.replaceagain()
+end--replace
+
 
 function e.mark()
 	buf.si, buf.sj = buf.ci, buf.cj
@@ -961,17 +1044,18 @@ function e.nextbuffer()
 	fullredisplay()
 end--nextbuffer
 
-function e.replace()
-	
-end--replace
-
 function e.test()
 --~ 	s = readstr("enter a string: ")
 --~ 	if not s then msg"NIL!" ; return end
 --~ 	msg("the string is: '"..s.."'")
-	buf.ll = editor.kll or {}
-	setcur(1, 0)
-	buf.chgd = true
+
+--~ 	buf.ll = editor.kll or {}
+--~ 	setcur(1, 0)
+--~ 	buf.chgd = true
+	local ch = readchar("test readchar: ", "[abc]")
+	if not ch then msg("aborted!")
+	else msg("readchar => "..ch)
+	end
 end--atest
 
 
@@ -1027,6 +1111,8 @@ editor.ctrlx_actions = {
 
 editor.esc_actions = {
 	[7] = e.nop,     -- esc^G (do nothing - cancel ESC prefix)
+	[53] = e.replace,  -- esc 5 -%
+	[55] = e.replaceagain,  -- esc 7 -&
 	[60] = e.gobot,  -- esc <
 	[62] = e.goeot,  -- esc >
 }--esc_actions
