@@ -802,7 +802,12 @@ function e.ctrlx()
 end--actrlx
 
 function e.searchagain()
-	repeat
+	if not editor.pat then 
+		msg("no string to search")
+		return nil
+	end
+	local oci, ocj = getcur() -- save the original cursor position
+	while true do
 		local l, cj = getline()
 		local j = l:find(editor.pat, cj+2, true) --plain text search
 		if j then 
@@ -810,8 +815,12 @@ function e.searchagain()
 			msg("found!")
 			return true
 		end
-	until not curdown()
+		if not (curdown() and curhome()) then
+			break -- at end of file and not found yet
+		end
+	end--while
 	msg("not found")
+	setcur(oci, ocj) -- restore cursor position
 end
 
 function e.search()
@@ -952,6 +961,9 @@ function e.nextbuffer()
 	fullredisplay()
 end--nextbuffer
 
+function e.replace()
+	
+end--replace
 
 function e.test()
 --~ 	s = readstr("enter a string: ")
