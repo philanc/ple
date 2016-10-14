@@ -203,7 +203,7 @@ term.input = function()
 	-- for special keys (see term.keys)
 	-- (this function assume the tty is already in raw mode)
 	return coroutine.wrap(function()
-		local c, c1, c2, c3, c4, ci, s
+		local c, c1, c2, ci, s
 		while true do
 			c = getcode()
 			if c ~= ESC then -- not a seq, yield c
@@ -869,6 +869,7 @@ function e.replaceagain()
 		local l, cj = getline()
 		local l1, l2 = l:sub(1, cj), l:sub(cj + #editor.pat + 1)
 		setline(l1 .. editor.patrepl .. l2)
+		setcurj(cj + #editor.patrepl)
 		n = n + 1
 		return true
 	end--replatcur
