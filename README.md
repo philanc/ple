@@ -22,6 +22,7 @@ The major limitations the brave tester should consider are:
 - no undo/redo (yet)
 - no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others  characters are displayed as a centered dot (code 183).
 - no word- or sentence- or paragraph-based movement.
+- the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
 - no automatic redimensioning of windows for X terminals (no SIGWINCH handling)
 - no syntax coloring.
@@ -35,6 +36,7 @@ On the other hand, the editor already support:
 - selection, selection highlight, cut and paste (mark, wipe and yank in emacs parlance)
 - multiple buffers (but just one window at a time for the moment)
 - read, write, save files.
+- a minimal help command (F1 or ^X^H - give a short description of the basic bindings)
 
 
 ### The term module
