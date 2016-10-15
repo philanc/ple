@@ -380,6 +380,7 @@ local function bufnew(ll)
 		ll=ll,        -- list of text lines
 		ci=1, cj=0,   -- text cursor (line ci, offset cj)
 		li=1,         -- index in ll of the line at the top of the box
+		hs=0,         -- horizontal scroll
 		chgd=true,    -- true if buffer has changed since last display
 		curstack = { {1, 0} } -- cursor stack (for push,pop opns)
 		-- box: a rectangular region of the screen where the buffer 
@@ -443,8 +444,8 @@ local function ccrepr(b, j)
 	return s
 end --ccrepr
 
-local function boxline(b, bl, l, insel, jon, joff)
-	-- display line l at the bl-th line of box b
+local function boxline(b, hs, bl, l, insel, jon, joff)
+	-- display line l at the bl-th line of box b, with horizontal scroll hs
 	-- if s is tool long for the box, return the
 	-- index of the first undisplayed char in l
 	-- insel: true if line start is in the selection
@@ -460,13 +461,13 @@ local function boxline(b, bl, l, insel, jon, joff)
 		if insel and j == joff+1 then style.normal() end
 		local chs = ccrepr(byte(l, j), cc)
 		cc = cc + #chs
-		if cc >= bc then 
+		if cc >= bc + hs then 
 			go(b.x+bl-1, b.y+b.c-1)
 			outf(EOL)
 			style.normal()
 			return j -- index of first undisplayed char in s
 		end
-		out(chs)
+		if cc > hs then out(chs) end
 	end
 	style.normal()
 end --boxline
@@ -531,6 +532,7 @@ local function statusline()
 	local s = strf("cur=%d,%d ", buf.ci, buf.cj)
 	if buf.si then s = s .. strf("sel=%d,%d ", buf.si, buf.sj) end
 	s = s .. strf("li=%d ", buf.li)
+	s = s .. strf("hs=%d ", buf.hs)
 	s = s .. strf("buf=%d ", editor.bufindex)
 	s = s .. strf("fn=%s ", buf.filename or "")
 	return s
@@ -552,10 +554,8 @@ local function adjcursor(buf)
 		buf.li = max(1, buf.ci-bl//2) 
 		buf.chgd = true
 	end
-	if buf.chgd then return end -- (adjusted li or real content change)
-	-- here, assume that cursor will move within the box
 	local cx = buf.ci - buf.li + 1
-	local cy = 1
+	local cy = 1 -- box column index, ignoring horizontal scroll
 	local col = buf.box.c
 	local l = buf.ll[buf.ci]
 	for j = 1, buf.cj do
@@ -564,21 +564,38 @@ local function adjcursor(buf)
 		if b == 9 then cy = cy + (tabln - (cy-1) % tabln)
 		else cy = cy + 1 
 		end
-		if cy > col then --don't move beyond the right of the box
-			cy = col
-			buf.cj = j
+--~ 		if cy > col then --don't move beyond the right of the box
+--~ 			cy = col
+--~ 			buf.cj = j
+--~ 			break
+--~ 		end
+	end
+	-- determine actual hs
+	local hs = 0 -- horizontal scroll
+	local cys = cy -- actual box column index
+	while true do
+		if cys >= col then 
+			cys = cys - 40
+			hs = hs + 40
+		else
 			break
 		end
+	end--while
+	if hs ~= buf.hs then
+		buf.chgd = true
+		buf.hs = hs
 	end
+	if buf.chgd then return end -- (li or hs or content change)
+	-- here, assume that cursor will move within the box
 	status(statusline()) 
-	go(buf.box.x + cx - 1, buf.box.y + cy - 1); flush()
+	go(buf.box.x + cx - 1, buf.box.y + cys - 1); flush()
 end -- adjcursor
 
 
 local function displaylines(buf)
 	-- display buffer lines starting at index buf.li 
 	-- in list of lines buf.ll
-	local b, ll, li = buf.box, buf.ll, buf.li
+	local b, ll, li, hs = buf.box, buf.ll, buf.li, buf.hs
 	local ci, cj, si, sj = buf.ci, buf.cj, buf.si, buf.sj
 	local bi, bj, ei, ej
 	local sel, insel, jon, joff = false, false, -1, -1
@@ -601,7 +618,7 @@ local function displaylines(buf)
 			end
 		end
 		local l = ll[lx] or EOT
-		boxline(b, i, l, insel, jon, joff)
+		boxline(b, hs, i, l, insel, jon, joff)
 	end
 	flush()
 end
