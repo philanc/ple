@@ -25,7 +25,7 @@ The major limitations the brave tester should consider are:
 - the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
 - no automatic redimensioning of windows for X terminals (no SIGWINCH handling)
-- the status line (at the top of screen, in red) is pretty cryptic :-)  It is mostly used as a debugging aid for the moment.
+- the status line (at the top of screen, in red) is pretty cryptic :-)  It is mostly used as a debugging aid at the moment.
 - no syntax coloring.
 - no clean API yet for extension modules ("modes" a la emacs, syntax coloring, etc.)
 - probably many others things that you would expect from a text editor!
@@ -44,6 +44,8 @@ On the other hand, the editor already support:
 ### The term module
 
 The `term` module includes all the basic functionnalities to display strings in various colors, move the cursor, erase lines and read keys.
+
+Like [linenoise](https://github.com/antirez/linenoise), it does not use ncurses, terminfo or termcap. It uses only very common ANSI sequences that are supported by (at least) the Linux console, xterm and rxvt.
 
 The origin of the term module is some code [contributed](http://lua-users.org/lists/lua-l/2009-12/msg00937.html) by Luiz Henrique de Figueiredo on the Lua mailing list some time ago.
 
