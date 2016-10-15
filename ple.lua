@@ -382,6 +382,7 @@ local function bufnew(ll)
 		li=1,         -- index in ll of the line at the top of the box
 		hs=0,         -- horizontal scroll (number of columns)
 		chgd=true,    -- true if buffer has changed since last display
+		unsaved=false,-- true if buffer content has changed since last save
 		curstack = { {1, 0} } -- cursor stack (for push,pop opns)
 		-- box: a rectangular region of the screen where the buffer 
 		--      is displayed (see boxnew() below)
@@ -398,7 +399,6 @@ end
 
 local style = {
 	normal = function() color(col.normal) end, 
-	high = function() color(col.red, col.bold) end, 
 	status = function() color(col.red, col.bold) end, 
 	msg = function() color(col.normal); color(col.green) end, 
 	sel = function() color(col.magenta, col.bold) end, 
@@ -414,20 +414,13 @@ local function boxnew(x, y, l, c)
 	return b
 end
 
-local function boxclear(b)
-	for i = 1, l do 
-		go(b.x+i-1, b.y)
-		out(b.clrl)
-	end
-end
-
 local function boxfill(b, ch, stylefn)
 	local filler = rep(ch, b.c)
 	stylefn()
 	for i = 1, b.l do
 		go(b.x+i-1, b.y); out(filler)
 	end
-	style.normal() -- back to notmal style
+	style.normal() -- back to normal style
 	flush()
 end
 
@@ -453,7 +446,8 @@ local function boxline(b, hs, bl, l, insel, jon, joff)
 	-- joff: if defined, position of end of selection
 	local bc = b.c
 	local cc = 0 --curent col in box
-	go(b.x+bl-1, b.y); out(b.clrl)
+	-- clear line (don't use cleareol - box maybe smaller than screen)
+	go(b.x+bl-1, b.y); out(b.clrl)  
 	go(b.x+bl-1, b.y)
 	if insel then style.sel() end
 	for j = 1, #l do
@@ -533,6 +527,7 @@ local function statusline()
 	if buf.si then s = s .. strf("sel=%d,%d ", buf.si, buf.sj) end
 	s = s .. strf("li=%d ", buf.li)
 	s = s .. strf("hs=%d ", buf.hs)
+	s = s .. strf("(%s) ", buf.unsaved and "*" or "")
 	s = s .. strf("buf=%d ", editor.bufindex)
 	s = s .. strf("fn=%s ", buf.filename or "")
 	return s
@@ -645,7 +640,7 @@ local function fullredisplay()
 	-- [TMP!! editor.scrbox is a bckgnd box with a pattern to
 	-- visually check that edition does not overflow buf box]
 	editor.scrbox = boxnew(1, 1, editor.scrl, editor.scrc)
-	boxfill(editor.scrbox, NDC, style.bckg)
+	boxfill(editor.scrbox, ' ', style.normal)
 --~ 	buf.box = boxnew(2, 2, editor.scrl-3, editor.scrc-2)
 --~ 	buf.box = boxnew(2, 1, editor.scrl-3, editor.scrc)
 	buf.box = boxnew(2, 1, editor.scrl-2, editor.scrc)
@@ -746,6 +741,7 @@ end
 local function setline(s)
 	buf.ll[buf.ci] = s
 	buf.chgd = true
+	buf.unsaved = true
 end
 
 local function insline(s)
@@ -755,6 +751,7 @@ local function insline(s)
 	else table.insert(buf.ll, buf.ci, s) -- insert
 	end
 	buf.chgd = true
+	buf.unsaved = true
 end
 
 local function remnextline()
@@ -765,6 +762,7 @@ local function remnextline()
 	local l = buf.ll[i]
 	table.remove(buf.ll, i)
 	buf.chgd = true
+	buf.unsaved = true
 	return l
 end
 
@@ -900,7 +898,7 @@ function e.replaceagain()
 		if replall then 
 			return replatcur()
 		else
-			local ch = readchar(
+			local ch = readchar( -- ask what to do
 				"replace? (q)uit (y)es (n)o (a)ll (^G) ", "[anqy]")
 			if not ch then return nil end
 			if ch == "a" then -- replace all
@@ -971,7 +969,6 @@ function e.wipe()
 	end
 	::done::
 	buf.si = nil
-	buf.chgd = true
 end--wipe
 
 function e.kill() 
@@ -1002,7 +999,6 @@ function e.yank()
 	end
 	curend(); e.nl(); setline(editor.kll[kln] .. l2)
 	ci, cj = getcur(); setcur(ci, #editor.kll[kln])
-	buf.chgd = true
 end--yank
 
 function e.exit()
@@ -1053,6 +1049,7 @@ function e.writefile(fname)
 	for i = 1, #buf.ll do fh:write(buf.ll[i], "\n") end
 	fh:close()
 	buf.filename = fname
+	buf.unsaved = false
 	msg(fname .. " saved.")
 end--writefile
 
@@ -1068,13 +1065,17 @@ function e.nextbuffer()
 end--nextbuffer
 
 function e.test()
+--~ 	-- test readstr
 --~ 	s = readstr("enter a string: ")
 --~ 	if not s then msg"NIL!" ; return end
 --~ 	msg("the string is: '"..s.."'")
 
+--~ 	-- test kill
 --~ 	buf.ll = editor.kll or {}
 --~ 	setcur(1, 0)
 --~ 	buf.chgd = true
+
+	-- test readchar
 	local ch = readchar("test readchar: ", "[abc]")
 	if not ch then msg("aborted!")
 	else msg("readchar => "..ch)
