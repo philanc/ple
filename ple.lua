@@ -646,7 +646,9 @@ local function fullredisplay()
 	-- visually check that edition does not overflow buf box]
 	editor.scrbox = boxnew(1, 1, editor.scrl, editor.scrc)
 	boxfill(editor.scrbox, NDC, style.bckg)
-	buf.box = boxnew(2, 2, editor.scrl-3, editor.scrc-2)
+--~ 	buf.box = boxnew(2, 2, editor.scrl-3, editor.scrc-2)
+--~ 	buf.box = boxnew(2, 1, editor.scrl-3, editor.scrc)
+	buf.box = boxnew(2, 1, editor.scrl-2, editor.scrc)
 	buf.chgd = true
 	redisplay(buf)
 end --fullredisplay
@@ -843,6 +845,7 @@ function e.searchagain(actfn)
 	-- search editor.pat. If found, execute actfn
 	-- default action is to display a message "found!")
 	-- on success, return the result of actfn() or true.
+	-- (note: search does NOT ignore case)
 	if not editor.pat then 
 		msg("no string to search")
 		return nil
@@ -884,6 +887,7 @@ function e.replaceagain()
 		-- replace at cursor (called only when editor.pat is found
 		-- at cursor)
 		local l, cj = getline()
+		-- don't use gsub (pat and patrepl are plain text, unescaped)
 		local l1, l2 = l:sub(1, cj), l:sub(cj + #editor.pat + 1)
 		setline(l1 .. editor.patrepl .. l2)
 		setcurj(cj + #editor.patrepl)
@@ -891,6 +895,7 @@ function e.replaceagain()
 		return true
 	end--replatcur
 	function replfn()
+		-- this function is called each time editor.pat is found
 		-- return true to continue, nil/false to stop
 		if replall then 
 			return replatcur()

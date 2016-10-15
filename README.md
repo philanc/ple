@@ -10,7 +10,7 @@ This is not intended to compete with large established editors (emacs, vim) or s
 
 The editor is entirely written in Lua.  The only external dependencies are the terminal itself which must support basic ANSI sequences and the unix command `stty` which is used to save/restore the terminal mode, and set the terminal in raw mode (required to read keys one at a time).
 
-It is written and tested with Lua 5.3. It should work with at least Lua 5.2 (there may be one or two goto and labels somewhere...).  
+It is written and tested with Lua 5.3. (there may be one or two goto and labels, and integer divisions somewhere...).  
 
 PLE has been inspired by Antirez' [Kilo](https://github.com/antirez/kilo) editor. PLE structure and code have nothing to do with Kilo, but the idea to directly use standard ANSI sequences and bypass the usual terminfo and ncurses libraries is inspired by Kilo (and also by Antirez' more established [linenoise](https://github.com/antirez/linenoise) library)
 
