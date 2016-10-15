@@ -1079,6 +1079,19 @@ function e.nextbuffer()
 	fullredisplay()
 end--nextbuffer
 
+function e.help()
+	for i, bx in ipairs(editor.buflist) do
+		if bx.filename == "*HELP*" then
+			buf = bx; editor.bufindex = i
+			fullredisplay()
+			return
+		end
+	end -- help buffer not found, then build it.
+	local ll = {}
+	for l in editor.helptext:gmatch("(.-)\n") do table.insert(ll, l) end
+	return e.newbuffer(ll, "*HELP*")
+end--help
+
 function e.test()
 --~ 	-- test readstr
 --~ 	s = readstr("enter a string: ")
@@ -1097,6 +1110,40 @@ function e.test()
 	end
 end--atest
 
+editor.helptext = [[
+-------------------------- HELP ---------------------------------
+Cursor movement
+	Arrows, PageUp, PageDown, Home, End
+	^A ^E		go to beginning, end of line
+	^B ^F		go backward, forward
+	^N ^P		go to next line, previous line
+	esc-< esc-> go to beginning, end of buffer
+	^S			forward search (plain text, case sensitive)
+	^R			search again (string previously entered with ^S)
+   
+Edition
+	^D, Delete	delete character at cursor
+	^H, bcksp	delete previous character
+	^K			cut from cursor to end of line
+	^space, ^@	mark  (set beginning of selection)
+	^W			wipe (cut selection)
+	^Y			yank (paste)
+
+Files, buffers
+	^X^F		prompt for a filename, read the file in a new buffer
+	^X^W		prompt for a filename, write the current buffer
+	^X^S		save the current buffer
+	^X^B		create a new, empty buffer
+	^X^N		switch to the next buffer
+
+Misc.
+	^X^C		exit the editor
+	^G			abort the current command
+	^L			redisplay the screen (useful if the screen was garbled
+				or its dimensions changed)
+	F1, ^X^H	this help text
+
+]]
 
 ------------------------------------------------------------------------
 -- bindings
@@ -1134,6 +1181,7 @@ editor.edit_actions = { -- actions binding for text edition
 	[keys.kleft]  = e.goleft,
 	[keys.kup]    = e.goup,
 	[keys.kdown]  = e.godown,
+	[keys.kf1]    = e.help,
 
 }--edit_actions
 
@@ -1141,7 +1189,8 @@ editor.ctrlx_actions = {
 	[2] = e.newbuffer,    -- ^X^B
 	[3] = e.exiteditor,   -- ^X^C
 	[6] = e.findfile,     -- ^X^F
-	[7] = e.nop,          -- ^G (do nothing - cancel ^X prefix)
+	[7] = e.nop,          -- ^X^G (do nothing - cancel ^X prefix)
+	[8] = e.help,         -- ^X^H
 	[14] = e.nextbuffer,  -- ^X^N
 	[19] = e.savefile,    -- ^X^S
 	[23] = e.writefile,   -- ^X^W
@@ -1150,6 +1199,7 @@ editor.ctrlx_actions = {
 
 editor.esc_actions = {
 	[7] = e.nop,     -- esc^G (do nothing - cancel ESC prefix)
+	[49] = e.help,   -- esc 1
 	[53] = e.replace,  -- esc 5 -%
 	[55] = e.replaceagain,  -- esc 7 -&
 	[60] = e.gobot,  -- esc <
@@ -1159,6 +1209,7 @@ editor.esc_actions = {
 function editor_loop(ll, fname)
 	style.normal()
 	e.newbuffer(ll, fname); 
+	msg("Help: F1 or ^X^H or esc-1")
 	while not editor.quit do
 		local k = editor.nextk()
 --~ 		if k == 17 then break end -- ^Q quits
