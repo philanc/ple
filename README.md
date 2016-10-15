@@ -25,8 +25,10 @@ The major limitations the brave tester should consider are:
 - the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
 - no automatic redimensioning of windows for X terminals (no SIGWINCH handling)
+- the status line (at the top of screen, in red) is pretty cryptic :-)  It is mostly used as a debugging aid for the moment.
 - no syntax coloring.
-- probably many others things that you expect from a text editor!
+- no clean API yet for extension modules ("modes" a la emacs, syntax coloring, etc.)
+- probably many others things that you would expect from a text editor!
 
 On the other hand, the editor already support:
 - a keybinding  a la Emacs (but much limited!)
