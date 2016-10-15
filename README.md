@@ -10,6 +10,8 @@ This is not intended to compete with large established editors (emacs, vim) or s
 
 The editor is entirely written in Lua.  The only external dependencies are the terminal itself which must support basic ANSI sequences and the unix command `stty` which is used to save/restore the terminal mode, and set the terminal in raw mode (required to read keys one at a time).
 
+It is written and tested with Lua 5.3. It should work with at least Lua 5.2 (there may be one or two goto and labels somewhere...)
+
 PLE has been inspired by Antirez' [Kilo](https://github.com/antirez/kilo) editor. PLE structure and code have nothing to do with Kilo, but the idea to directly use standard ANSI sequences and bypass the usual terminfo and ncurses libraries is inspired by Kilo (and also by Antirez' more established [linenoise](https://github.com/antirez/linenoise) library)
 
 ### Limitations
@@ -19,8 +21,7 @@ PLE is ***Work in Progress***! It is not intended to be used for anything seriou
 The major limitations the brave tester should consider are:
 - no undo/redo (yet)
 - no support for long lines. The next step will be to implement some minimal horizontal scroll but even this is not here yet.  (note: the long lines are not broken or erased or anything, they are just not displayed beyond the width of the screen)
-- no UTF8 support. PLE display 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others  characters are displayed as a centered dot (code 183).
-- no search-and-replace function (forward search only, and only for plain text)
+- no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others  characters are displayed as a centered dot (code 183).
 - no word- or sentence- or paragraph-based movement.
 - no prompt for unsaved files at exit.
 - no provision for automatic backup files.
@@ -30,7 +31,8 @@ The major limitations the brave tester should consider are:
 
 On the other hand, the editor already support:
 - a keybinding  a la Emacs (but much limited!)
-- basic editing functions.
+- basic editing functions
+- basic search and replace functions (plain text only)
 - selection, selection highlight, cut and paste (mark, wipe and yank in emacs parlance)
 - multiple buffers (but just one window at a time for the moment)
 - read, write, save files.
