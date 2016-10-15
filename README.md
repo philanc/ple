@@ -22,7 +22,6 @@ The major limitations the brave tester should consider are:
 - no undo/redo (yet)
 - no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others  characters are displayed as a centered dot (code 183).
 - no word- or sentence- or paragraph-based movement.
-- no prompt for unsaved files at exit.
 - no provision for automatic backup files.
 - no automatic redimensioning of windows for X terminals (no SIGWINCH handling)
 - no syntax coloring.
