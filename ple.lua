@@ -380,7 +380,7 @@ local function bufnew(ll)
 		ll=ll,        -- list of text lines
 		ci=1, cj=0,   -- text cursor (line ci, offset cj)
 		li=1,         -- index in ll of the line at the top of the box
-		hs=0,         -- horizontal scroll
+		hs=0,         -- horizontal scroll (number of columns)
 		chgd=true,    -- true if buffer has changed since last display
 		curstack = { {1, 0} } -- cursor stack (for push,pop opns)
 		-- box: a rectangular region of the screen where the buffer 
@@ -597,9 +597,9 @@ local function displaylines(buf)
 	-- in list of lines buf.ll
 	local b, ll, li, hs = buf.box, buf.ll, buf.li, buf.hs
 	local ci, cj, si, sj = buf.ci, buf.cj, buf.si, buf.sj
-	local bi, bj, ei, ej
+	local bi, bj, ei, ej -- beginning and end of selection
 	local sel, insel, jon, joff = false, false, -1, -1
-	if si then
+	if si then -- set beginning and end of selection
 		sel = true
 		if si < ci then bi=si; bj=sj; ei=ci; ej=cj
 		elseif si > ci then bi=ci; bj=cj; ei=si; ej=sj

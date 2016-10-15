@@ -20,7 +20,6 @@ PLE is ***Work in Progress***! It is not intended to be used for anything seriou
 
 The major limitations the brave tester should consider are:
 - no undo/redo (yet)
-- no support for long lines. The next step will be to implement some minimal horizontal scroll but even this is not here yet.  (note: the long lines are not broken or erased or anything, they are just not displayed beyond the width of the screen)
 - no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others  characters are displayed as a centered dot (code 183).
 - no word- or sentence- or paragraph-based movement.
 - no prompt for unsaved files at exit.
@@ -33,6 +32,7 @@ On the other hand, the editor already support:
 - a keybinding  a la Emacs (but much limited!)
 - basic editing functions
 - basic search and replace functions (plain text only)
+- support for long lines (horizontal scroll, no provision for wrapping long lines)
 - selection, selection highlight, cut and paste (mark, wipe and yank in emacs parlance)
 - multiple buffers (but just one window at a time for the moment)
 - read, write, save files.
