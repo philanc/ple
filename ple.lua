@@ -507,7 +507,7 @@ local function readchar(prompt, charpat)
 	while true do
 		k = editor.nextk()
 		if k == 7 then return nil end -- ^G - abort
-		if (k >= 32 and k <127) then
+		if (k < 127) then
 			local ch = char(k)
 			if ch:match(charpat) then return ch end
 		end
@@ -1001,9 +1001,24 @@ function e.yank()
 	ci, cj = getcur(); setcur(ci, #editor.kll[kln])
 end--yank
 
-function e.exit()
-	-- should propose to save modified files
+function e.quiteditor()
 	editor.quit = true
+end
+
+function e.exiteditor()
+	local anyunsaved = false
+	for i, bx in ipairs(editor.buflist) do 
+		anyunsaved = anyunsaved or bx.unsaved
+	end
+	if anyunsaved then
+		local ch = readchar("Some buffers not saved. Quit? ", "[YNQynq\r\n]")
+		if ch ~= "y" and ch ~= "Y" then 
+			msg("aborted.")
+			return
+		end
+	end
+	editor.quit = true
+	msg("exiting.")
 end
 
 function e.esc()
@@ -1100,7 +1115,7 @@ editor.edit_actions = { -- actions binding for text edition
 	[13] = e.nl,           -- ^M (insert newline)
 	[14] = e.godown,       -- ^N
 	[16] = e.goup,         -- ^P
-	[17] = e.exit,         -- ^Q
+	[17] = e.quiteditor,   -- ^Q
 	[18] = e.searchagain,  -- ^R
 	[19] = e.search,       -- ^S
 	[20] = e.test,         -- ^T
@@ -1124,7 +1139,7 @@ editor.edit_actions = { -- actions binding for text edition
 
 editor.ctrlx_actions = {
 	[2] = e.newbuffer,    -- ^X^B
-	[3] = e.exit,         -- ^X^C
+	[3] = e.exiteditor,   -- ^X^C
 	[6] = e.findfile,     -- ^X^F
 	[7] = e.nop,          -- ^G (do nothing - cancel ^X prefix)
 	[14] = e.nextbuffer,  -- ^X^N
