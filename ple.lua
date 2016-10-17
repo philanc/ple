@@ -383,7 +383,7 @@ local function bufnew(ll)
 		hs=0,         -- horizontal scroll (number of columns)
 		chgd=true,    -- true if buffer has changed since last display
 		unsaved=false,-- true if buffer content has changed since last save
-		curstack = { {1, 0} } -- cursor stack (for push,pop opns)
+		ual = {},     -- undo action list
 		-- box: a rectangular region of the screen where the buffer 
 		--      is displayed (see boxnew() below)
 		--      the box is assigned to the buffer by a layout function.
@@ -530,6 +530,7 @@ local function statusline()
 	s = s .. strf("(%s) ", buf.unsaved and "*" or "")
 	s = s .. strf("buf=%d ", editor.bufindex)
 	s = s .. strf("fn=%s ", buf.filename or "")
+	s = s .. strf("ual=%d ", #buf.ual)
 	return s
 end--statusline
 
@@ -674,14 +675,6 @@ end
 
 local function getcur() return buf.ci, buf.cj end
 local function getsel() return buf.si, buf.sj end
-local function pushcur() 
-	table.insert(buf.curstack, {buf.ci, buf.cj, buf.si, buf.sj})
-end
-local function popcur()
-	local ct = table.remove(buf.curstack)
-	if not ct then return end -- nothing left in curstack: do nothing
-	buf.ci, buf.cj, buf.si, buf.sj = table.unpack(ct)
-end
 
 local function getselbounds()
 	if buf.si then
@@ -697,6 +690,16 @@ local function getselbounds()
 	end
 end
 
+
+local function getline(i)
+	-- return current line and cursor position in line
+	-- if i is provided, return line i
+	if i then return buf.ll[i], 1 end
+	return buf.ll[buf.ci], buf.cj
+end
+
+-- cursor movement
+
 local function setcurj(j) -- set cursor on the current line
 	local ci = getcur()
 	local ln = #buf.ll[ci]
@@ -705,7 +708,7 @@ local function setcurj(j) -- set cursor on the current line
 	return j
 end
 		
-local function setcur(i, j)
+local function setcur(i, j) -- set cursor absolute
 	if not i or i > #buf.ll then i = #buf.ll end
 	if i < 1 then i = 1 end
 	if not j or j > #buf.ll[i] then j = #buf.ll[i] end
@@ -714,7 +717,7 @@ local function setcur(i, j)
 	return i, j
 end
 
-local function addcur(di, dj) 
+local function addcur(di, dj) -- move cursor relative
 	buf.ci, buf.cj = buf.ci + di, buf.cj + dj
 	return true
 end
@@ -731,14 +734,10 @@ local function cureot() return not ateot() and setcur() end
 
 -- modification at cursor line
 
-local function getline(i)
-	-- return current line and cursor position in line
-	-- if i is provided, return line i
-	if i then return buf.ll[i], 1 end
-	return buf.ll[buf.ci], buf.cj
-end
+local ualpush -- defined further down with all undo functions
 
 local function setline(s)
+	ualpush('set', s)
 	buf.ll[buf.ci] = s
 	buf.chgd = true
 	buf.unsaved = true
@@ -747,8 +746,12 @@ end
 local function insline(s)
 	-- insert a line above current line
 	-- if at end of text, append the line.
-	if ateot() then table.insert(buf.ll, s) -- append
-	else table.insert(buf.ll, buf.ci, s) -- insert
+	if ateot() then 
+		ualpush('app', s)
+		table.insert(buf.ll, s) -- append
+	else 
+		ualpush('ins', s)
+		table.insert(buf.ll, buf.ci, s) -- insert
 	end
 	buf.chgd = true
 	buf.unsaved = true
@@ -760,10 +763,30 @@ local function remnextline()
 	if atlast() then return end
 	local i = buf.ci + 1
 	local l = buf.ll[i]
+	ualpush('rem', l)
 	table.remove(buf.ll, i)
 	buf.chgd = true
 	buf.unsaved = true
 	return l
+end
+
+------------------------------------------------------------------------
+-- undo functions
+
+function ualpush(op, s)
+	local top = #buf.ual
+	local last = buf.ual[top]
+	local ci, cj = buf.ci, buf.cj
+	if last and op == "set" then
+		local lci, lcj = last.ci, last.cj
+--~ 		if ci == lci and (lcj - cj) <= 2 and (lcj-cj) >= -2 then
+		if ci == lci then
+			last.s = s
+			return
+		end
+	end
+	table.insert(buf.ual, {op=op, ci=buf.ci, cj=buf.cj, s=s})
+	return
 end
 
 ------------------------------------------------------------------------
