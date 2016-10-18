@@ -40,6 +40,41 @@ On the other hand, the editor already support:
 - read, write, save files.
 - a minimal help command (F1 or ^X^H - give a short description of the basic bindings)
 
+### Default key bindings
+
+```
+Cursor movement
+	Arrows, PageUp, PageDown, Home, End
+	^A, ^E		 go to beginning, end of line
+	^B, ^F		 go backward, forward
+	^N, ^P		 go to next line, previous line
+	esc-<, esc-> go to beginning, end of buffer
+	^S			 forward search (plain text, case sensitive)
+	^R			 search again (string previously entered with ^S)
+   
+Edition
+	^D, Delete	 delete character at cursor
+	^H, bcksp	 delete previous character
+	^K			 cut from cursor to end of line
+	^space, ^@	 mark  (set beginning of selection)
+	^W			 wipe (cut selection)
+	^Y			 yank (paste)
+
+Files, buffers
+	^X^F		 prompt for a filename, read the file in a new buffer
+	^X^W		 prompt for a filename, write the current buffer
+	^X^S		 save the current buffer
+	^X^B		 create a new, empty buffer
+	^X^N		 switch to the next buffer
+
+Misc.
+	^X^C		 exit the editor
+	^G			 abort the current command
+	^L			 redisplay the screen (useful if the screen was garbled
+				 or its dimensions changed)
+	F1, ^X^H	 this help text
+	
+```
 
 ### The term module
 
