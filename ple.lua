@@ -679,21 +679,6 @@ end
 local function getcur() return buf.ci, buf.cj end
 local function getsel() return buf.si, buf.sj end
 
-local function getselbounds()
-	if buf.si then
-		local ci, cj, si, sj = buf.ci, buf.cj, buf.si, buf.sj
-		local bi, bj, ei, ej
-		if si < ci then bi=si; bj=sj; ei=ci; ej=cj
-		elseif si > ci then bi=ci; bj=cj; ei=si; ej=sj
-		elseif sj < cj then bi=si; bj=sj; ei=ci; ej=cj
-		else -- sj >= cj
-			bi=ci; bj=cj; ei=si; ej=sj
-		end
-		return bi, bj, ei, ej
-	end
-end
-
-
 local function getline(i)
 	-- return current line and cursor position in line
 	-- if i is provided, return line i
@@ -748,6 +733,7 @@ end
 
 local function openline()
 	-- does not change the cursor position
+	-- (undone with joinline)
 	if atbol() then
 		table.insert(buf.ll, buf.ci, "")
 	elseif ateol() then 
@@ -766,6 +752,7 @@ end--openline
 local function joinline()
 	-- does not change the cursor position
 	-- must be called only when the cursor is at end of line
+	-- (undone with openline)
 	if ateot() then return false end
 	assert(ateol(), "must be at end of line")
 	buf.ll[buf.ci] = buf.ll[buf.ci] .. table.remove(buf.ll, buf.ci+1)
