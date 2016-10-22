@@ -1212,6 +1212,7 @@ editor.esc_actions = {
 	[55] = e.replaceagain,  -- esc 7 -&
 	[60] = e.gobot,  -- esc <
 	[62] = e.goeot,  -- esc >
+	[107] = e.killeol,  -- esc k
 }--esc_actions
 
 function editor_loop(ll, fname)
