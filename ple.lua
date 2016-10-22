@@ -735,6 +735,8 @@ local function setline(s)
 end
 
 local function openline()
+	-- split the current line at the cursor in two lines 
+	-- (equivalent to inserting a newline char at cursor)
 	-- does not change the cursor position
 	-- (undone with joinline)
 	if atbol() then
@@ -753,6 +755,8 @@ local function openline()
 end--openline
 
 local function joinline()
+	-- join the current line with the next
+	-- (equivalent to deleting a newline at end of line)
 	-- does not change the cursor position
 	-- must be called only when the cursor is at end of line
 	-- (undone with openline)
@@ -770,6 +774,8 @@ end--joinline
 -- undo functions
 
 function ualpush(op, s)
+	-- push enough context to be able to undo a core operation
+	-- (setline, openline, joinline)
 	local top = #buf.ual
 	local last = buf.ual[top]
 	if last and last.op == "set" and op == "set" and buf.ci == last.ci then
@@ -959,6 +965,7 @@ function e.killeol(appflag)
 	-- wipe from cursor to eol included. copy to the kill buffer
 	-- or append to the kill buffer if last action was also 'killeol'
 	-- if appflag is true, always append to the kill buffer (default: false)
+	-- (be careful if modifying this. it is also used by e.wipe())
 	if ateot() then return end
 	local l, cj = getline()
 	appflag = appflag or (editor.lastresult == e.killeol)
