@@ -393,9 +393,7 @@ local function bufnew(ll)
 	return buf
 end
 
-
-------------------------------------------------------------------------
--- screen display functions  (styles, boxes, line display)
+-- style functions
 
 local style = {
 	normal = function() color(col.normal) end, 
@@ -405,68 +403,7 @@ local style = {
 	bckg = function() color(col.black, col.bgyellow) end, 
 }
 
-local function boxnew(x, y, l, c)
-	-- a box is a rectangular area on the screen
-	-- defined by top left corner (x, y) 
-	-- and number of lines and columns (l, c)
-	local b = {x=x, y=y, l=l, c=c}
-	b.clrl = rep(" ", c) -- used to clear box content
-	return b
-end
 
-local function boxfill(b, ch, stylefn)
-	local filler = rep(ch, b.c)
-	stylefn()
-	for i = 1, b.l do
-		go(b.x+i-1, b.y); out(filler)
-	end
-	style.normal() -- back to normal style
-	flush()
-end
-
--- line display
-
-local function ccrepr(b, j)
-	-- return display representation of char with code b
-	-- at line offset j (j is used for tabs)
-	local s
-	if b == 9 then s = rep(' ', tabln - j % tabln)
-	elseif (b >= 127 and b <160) or (b < 32) then s = NDC
-	else s = char(b)
-	end--if
-	return s
-end --ccrepr
-
-local function boxline(b, hs, bl, l, insel, jon, joff)
-	-- display line l at the bl-th line of box b, with horizontal scroll hs
-	-- if s is tool long for the box, return the
-	-- index of the first undisplayed char in l
-	-- insel: true if line start is in the selection
-	-- jon: if defined and not insel, position of beg of selection
-	-- joff: if defined, position of end of selection
-	local bc = b.c
-	local cc = 0 --curent col in box
-	-- clear line (don't use cleareol - box maybe smaller than screen)
-	go(b.x+bl-1, b.y); out(b.clrl)  
-	go(b.x+bl-1, b.y)
-	if insel then style.sel() end
-	for j = 1, #l do
-		if (not insel) and j == jon+1 then style.sel(); insel=true end
-		if insel and j == joff+1 then style.normal() end
-		local chs = ccrepr(byte(l, j), cc)
-		cc = cc + #chs
-		if cc >= bc + hs then 
-			go(b.x+bl-1, b.y+b.c-1)
-			outf(EOL)
-			style.normal()
-			return j -- index of first undisplayed char in s
-		end
-		if cc > hs then out(chs) end
-	end
-	style.normal()
-end --boxline
-
-------------------------------------------------------------------------
 -- dialog functions
 
 local function msg(m)
@@ -535,8 +472,74 @@ local function statusline()
 end--statusline
 
 
+
+------------------------------------------------------------------------
+-- screen display functions  (boxes, line display)
+
+local function boxnew(x, y, l, c)
+	-- a box is a rectangular area on the screen
+	-- defined by top left corner (x, y) 
+	-- and number of lines and columns (l, c)
+	local b = {x=x, y=y, l=l, c=c}
+	b.clrl = rep(" ", c) -- used to clear box content
+	return b
+end
+
+local function boxfill(b, ch, stylefn)
+	local filler = rep(ch, b.c)
+	stylefn()
+	for i = 1, b.l do
+		go(b.x+i-1, b.y); out(filler)
+	end
+	style.normal() -- back to normal style
+	flush()
+end
+
+-- line display
+
+local function ccrepr(b, j)
+	-- return display representation of char with code b
+	-- at line offset j (j is used for tabs)
+	local s
+	if b == 9 then s = rep(' ', tabln - j % tabln)
+	elseif (b >= 127 and b <160) or (b < 32) then s = NDC
+	else s = char(b)
+	end--if
+	return s
+end --ccrepr
+
+local function boxline(b, hs, bl, l, insel, jon, joff)
+	-- display line l at the bl-th line of box b, with horizontal scroll hs
+	-- if s is tool long for the box, return the
+	-- index of the first undisplayed char in l
+	-- insel: true if line start is in the selection
+	-- jon: if defined and not insel, position of beg of selection
+	-- joff: if defined, position of end of selection
+	local bc = b.c
+	local cc = 0 --curent col in box
+	-- clear line (don't use cleareol - box maybe smaller than screen)
+	go(b.x+bl-1, b.y); out(b.clrl)  
+	go(b.x+bl-1, b.y)
+	if insel then style.sel() end
+	for j = 1, #l do
+		if (not insel) and j == jon+1 then style.sel(); insel=true end
+		if insel and j == joff+1 then style.normal() end
+		local chs = ccrepr(byte(l, j), cc)
+		cc = cc + #chs
+		if cc >= bc + hs then 
+			go(b.x+bl-1, b.y+b.c-1)
+			outf(EOL)
+			style.normal()
+			return j -- index of first undisplayed char in s
+		end
+		if cc > hs then out(chs) end
+	end
+	style.normal()
+end --boxline
+
 ------------------------------------------------------------------------
 -- screen redisplay functions
+
 
 local function adjcursor(buf)
 	-- adjust the screen cursor so that it matches with 
@@ -743,32 +746,35 @@ local function setline(s)
 	buf.unsaved = true
 end
 
-local function insline(s)
-	-- insert a line above current line
-	-- if at end of text, append the line.
-	if ateot() then 
-		ualpush('app', s)
-		table.insert(buf.ll, s) -- append
-	else 
-		ualpush('ins', s)
-		table.insert(buf.ll, buf.ci, s) -- insert
+local function openline()
+	-- does not change the cursor position
+	if atbol() then
+		table.insert(buf.ll, buf.ci, "")
+	elseif ateol() then 
+		table.insert(buf.ll, buf.ci+1, "")
+	else
+		local l, cj = getline()
+		buf.ll[buf.ci] = l:sub(1, cj)
+		table.insert(buf.ll, buf.ci+1, l:sub(cj + 1))
 	end
+	ualpush('open')
 	buf.chgd = true
 	buf.unsaved = true
-end
+	return true
+end--openline
 
-local function remnextline()
-	-- remove and return next line
-	-- return nil if already on the last line
-	if atlast() then return end
-	local i = buf.ci + 1
-	local l = buf.ll[i]
-	ualpush('rem', l)
-	table.remove(buf.ll, i)
+local function joinline()
+	-- does not change the cursor position
+	-- must be called only when the cursor is at end of line
+	if ateot() then return false end
+	assert(ateol(), "must be at end of line")
+	buf.ll[buf.ci] = buf.ll[buf.ci] .. table.remove(buf.ll, buf.ci+1)
+	ualpush('join')
 	buf.chgd = true
 	buf.unsaved = true
-	return l
-end
+	return true
+end--joinline
+
 
 ------------------------------------------------------------------------
 -- undo functions
@@ -790,7 +796,7 @@ function ualpush(op, s)
 end
 
 ------------------------------------------------------------------------
--- editor actions
+-- EDITOR ACTIONS
 
 editor.actions = {}
 local e = editor.actions
@@ -823,20 +829,14 @@ function e.pgdn() for i = 1, buf.box.l - 2 do curdown() end end
 function e.pgup() for i = 1, buf.box.l - 2 do curup() end end
 
 function e.nl()
-	local l, cj = getline()
-	insline(l:sub(1, cj)); curdown()
-	setline(l:sub(cj + 1)); curhome()
-	return true
+	return openline() and curdown() and curhome()
 end
 
 function e.del()
-	local l, cj = getline()
 	if ateot() then return false end
-	if ateol() then
-		setline(l .. remnextline())
-	else
-		setline(l:sub(1,cj) .. l:sub(cj+2))
-	end
+	if ateol() then return joinline() end
+	local l, cj = getline()
+	setline(l:sub(1,cj) .. l:sub(cj+2))
 	return true
 end
 
@@ -954,6 +954,22 @@ function e.replace()
 	return e.replaceagain()
 end--replace
 
+function e.kill(appflag) 
+	-- wipe from cursor to end of line
+	-- del nl but do not modify the kill buffer if at eol
+	if ateol() then return e.del() end
+	local l, cj = getline()
+	editor.kll = { l:sub(cj+1) }
+	return setline(l:sub(1, cj))
+end--kill
+
+function e.killeol()
+	-- wipe from cursor to eol included. Append to the kill buffer
+	local l, cj = getline()
+	table.insert(editor.kll, l:sub(cj+1))
+	setline(l:sub(1, cj))
+	return joinline()
+end--killeol
 
 function e.mark()
 	buf.si, buf.sj = buf.ci, buf.cj
@@ -973,36 +989,13 @@ function e.wipe()
 	editor.kll = {}
 	-- make sure cursor is at beg of selection
 	if markbeforecur() then e.exch_mark() end 
+	e.exch_mark(); e.nl() -- open line at end of selection
+	e.exch_mark() -- back to beginning of selection
 	local ci, cj = getcur()
 	local si, sj = getsel()
-	local l1, l2 = getline(), getline(si)
-	setline(l1:sub(1, cj) .. l2:sub(sj+1))
-	if ci == si then
-		editor.kll[1] = l1:sub(cj+1, sj)
-		goto done
-	end
-	editor.kll[1] = l1:sub(cj+1)
-	for i = ci+1, si do 
-		local l3 = remnextline() 
-		if i < si then 	
-			table.insert(editor.kll, l3)
-		else -- last sel line
-			table.insert(editor.kll, l3:sub(1, sj))
-		end
-	end
-	::done::
+	for i = ci+1, si do e.killeol() end
 	buf.si = nil
-end--wipe
-
-function e.kill() 
-	-- wipe from cursor to end of line
-	-- del nl but do not modify the kill buffer if at eol
-	if ateol() then return e.del() end
-	local l, cj = getline()
-	editor.kll = { l:sub(cj+1) }
-	return setline(l:sub(1, cj))
-end--kill
-	
+end--wipe	
 
 function e.yank()
 	if not editor.kll or #editor.kll == 0 then 
