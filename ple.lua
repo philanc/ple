@@ -848,7 +848,7 @@ function e.ctrlx()
 	msg(bname)
 	local act = editor.ctrlx_actions[k]
 	if act then 
-		act() 
+		return act() 
 	else
 		msg(bname .. " not bound")
 	end
@@ -955,12 +955,26 @@ function e.kill(appflag)
 	return setline(l:sub(1, cj))
 end--kill
 
-function e.killeol()
-	-- wipe from cursor to eol included. Append to the kill buffer
+function e.killeol(appflag)
+	-- wipe from cursor to eol included. copy to the kill buffer
+	-- or append to the kill buffer if last action was also 'killeol'
+	-- if appflag is true, always append to the kill buffer (default: false)
+	if ateot() then return end
 	local l, cj = getline()
+	appflag = appflag or (editor.lastresult == e.killeol)
+	if not appflag then -- start with a fresh kill buffer
+		editor.kll = {}
+	else
+		-- here either kll is empty 
+		-- or last item is an empty line => remove it
+		table.remove(editor.kll)
+	end
 	table.insert(editor.kll, l:sub(cj+1))
+	table.insert(editor.kll, "")
 	setline(l:sub(1, cj))
-	return joinline()
+	joinline()
+	-- allow to detect that previous command was also killeol
+	return e.killeol 
 end--killeol
 
 function e.mark()
@@ -985,7 +999,9 @@ function e.wipe()
 	e.exch_mark() -- back to beginning of selection
 	local ci, cj = getcur()
 	local si, sj = getsel()
-	for i = ci+1, si do e.killeol() end
+	for i = ci+1, si do e.killeol(true) end
+	-- remove the nl added at end of selection from the kill buffer
+	table.remove(editor.kll)
 	buf.si = nil
 end--wipe	
 
@@ -1005,7 +1021,9 @@ function e.yank()
 	for i = 2, kln-1  do
 		curend(); e.nl(); setline(editor.kll[i])
 	end
-	curend(); e.nl(); setline(editor.kll[kln] .. l2)
+	curend()
+	e.nl()
+	setline(editor.kll[kln] .. l2)
 	ci, cj = getcur(); setcur(ci, #editor.kll[kln])
 end--yank
 
@@ -1035,7 +1053,7 @@ function e.esc()
 	msg(bname)
 	local act = editor.esc_actions[k]
 	if act then 
-		act() 
+		return act() 
 	else
 		msg(bname .. " not bound")
 	end
@@ -1106,16 +1124,16 @@ function e.test()
 --~ 	if not s then msg"NIL!" ; return end
 --~ 	msg("the string is: '"..s.."'")
 
---~ 	-- test kill
---~ 	buf.ll = editor.kll or {}
---~ 	setcur(1, 0)
---~ 	buf.chgd = true
+	-- test kill
+	buf.ll = editor.kll or {}
+	setcur(1, 0)
+	buf.chgd = true
 
-	-- test readchar
-	local ch = readchar("test readchar: ", "[abc]")
-	if not ch then msg("aborted!")
-	else msg("readchar => "..ch)
-	end
+--~ 	-- test readchar
+--~ 	local ch = readchar("test readchar: ", "[abc]")
+--~ 	if not ch then msg("aborted!")
+--~ 	else msg("readchar => "..ch)
+--~ 	end
 end--atest
 
 editor.helptext = [[
@@ -1225,11 +1243,11 @@ function editor_loop(ll, fname)
 		msg(term.keyname(k))
 		local act = buf.actions[k]
 		if act then 
-			act()
+			editor.lastresult = act()
 		elseif (k >= 32 and k < 127) 
 			or (k >= 160 and k < 256) 
 			or (k == 9) then
-			e.insch(k)
+			editor.lastresult = e.insch(k)
 		else
 			msg(term.keyname(k) .. " not bound")
 		end
