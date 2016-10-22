@@ -657,10 +657,12 @@ editor.fullredisplay = fullredisplay
 
 ------------------------------------------------------------------------
 -- BUFFER AND CURSOR MANIPULATION 
+--
+-- 		use these functions instead of direct buf.ll manipulation. 
+-- 		This will make it easier to change or enrich the 
+-- 		representation later. (eg. syntax coloring, undo/redo, ...)
 
--- use these functions instead of direct buf.ll manipulation. 
--- This will make it easier to change or enrich the 
--- representation later. (eg. syntax coloring, undo/redo, ...)
+-- various predicate and 'get' functions
 
 -- test if at end / beginning of  line  (eol, bol)
 local function ateol() return buf.cj >= #buf.ll[buf.ci] end
@@ -729,6 +731,7 @@ local function setline(s)
 	buf.ll[buf.ci] = s
 	buf.chgd = true
 	buf.unsaved = true
+	return true
 end
 
 local function openline()
@@ -769,16 +772,18 @@ end--joinline
 function ualpush(op, s)
 	local top = #buf.ual
 	local last = buf.ual[top]
-	local ci, cj = buf.ci, buf.cj
-	if last and op == "set" then
-		local lci, lcj = last.ci, last.cj
---~ 		if ci == lci and (lcj - cj) <= 2 and (lcj-cj) >= -2 then
-		if ci == lci then
-			last.s = s
-			return
-		end
+	if last and last.op == "set" and op == "set" and buf.ci == last.ci then
+		-- all sequential 'set' actions on the same line are 
+		-- bundled together in the same record
+		last.s = s
+		return
 	end
-	table.insert(buf.ual, {op=op, ci=buf.ci, cj=buf.cj, s=s})
+	local rec = {op=op, ci=buf.ci, cj=buf.cj}
+	if op == "set" then
+		rec.ol = getline()
+		rec.l = s
+	end
+	table.insert(buf.ual, rec)
 	return
 end
 
