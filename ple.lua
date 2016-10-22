@@ -1151,6 +1151,7 @@ Edition
 	^D, Delete	delete character at cursor
 	^H, bcksp	delete previous character
 	^K			cut from cursor to end of line
+	esc-k       cut from cursor to beginning of next line
 	^space, ^@	mark  (set beginning of selection)
 	^W			wipe (cut selection)
 	^Y			yank (paste)
