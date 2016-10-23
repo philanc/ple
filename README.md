@@ -40,7 +40,9 @@ On the other hand, the editor already support:
 - read, write, save files.
 - a minimal help command (F1 or ^X^H - give a short description of the basic bindings)
 
-At the moment, the complete editor is 35KB. It has been tested on xterm, rxvt and the Linux console. As they say, *it works on my PC* (TM).  
+At the moment, the complete editor is 35KB. It has been tested on xterm, rxvt and the Linux console. 
+
+As they say, *it works on my PC...*
 
 
 ### Default key bindings
