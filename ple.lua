@@ -779,8 +779,13 @@ end--joinline
 
 
 ------------------------------------------------------------------------
--- undo functions
+-- undo functions  !! NOT IMPLEMENTED YET !!
 
+function ualpush(op, s)
+	-- do nothing - no Undo yet!
+end
+
+--[[
 function ualpush(op, s)
 	-- push enough context to be able to undo a core operation
 	-- (setline, openline, joinline)
@@ -800,6 +805,9 @@ function ualpush(op, s)
 	table.insert(buf.ual, rec)
 	return
 end
+
+]]
+
 
 ------------------------------------------------------------------------
 -- EDITOR ACTIONS

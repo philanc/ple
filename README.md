@@ -21,6 +21,7 @@ PLE is ***Work in Progress***! It is not intended to be used for anything seriou
 The major limitations the brave tester should consider are:
 - no undo/redo (yet)
 - no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others characters are displayed as a centered dot (code 183).
+- TAB length is set to 4
 - no word- or sentence- or paragraph-based movement.
 - the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
