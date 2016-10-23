@@ -83,6 +83,11 @@ Misc.
 	
 ```
 
+### Usage
+
+`lua ple.lua [filename]`
+
+
 ### The term module
 
 The `term` module includes all the basic functionnalities to display strings in various colors, move the cursor, erase lines and read keys.
