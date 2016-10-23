@@ -43,6 +43,8 @@ end
 
 terminal utility module - unix only
 
+(also available as a distinct module. see https://github.com/philanc/plterm )
+
 This module assumes the tty is in raw mode. 
 It provides functions based on stty (so available on unix) 
 to save, set and restore tty modes.
