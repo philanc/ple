@@ -1245,6 +1245,7 @@ function editor_loop(ll, fname)
 	style.normal()
 	e.newbuffer(ll, fname); 
 	msg("Help: F1 or ^X^H or esc-1")
+	redisplay(buf) -- adjust cursor to beginning of buffer
 	while not editor.quit do
 		local k = editor.nextk()
 --~ 		if k == 17 then break end -- ^Q quits
