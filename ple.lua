@@ -468,12 +468,13 @@ end
 local function statusline()
 	local s = strf("cur=%d,%d ", buf.ci, buf.cj)
 	if buf.si then s = s .. strf("sel=%d,%d ", buf.si, buf.sj) end
-	s = s .. strf("li=%d ", buf.li)
-	s = s .. strf("hs=%d ", buf.hs)
+	-- uncomment the following for debug purposes
+--~ 	s = s .. strf("li=%d ", buf.li)
+--~ 	s = s .. strf("hs=%d ", buf.hs)
+--~ 	s = s .. strf("ual=%d ", #buf.ual)
+--~ 	s = s .. strf("buf=%d ", editor.bufindex)
+	s = s .. strf("[%s] ", buf.filename or "unnamed")
 	s = s .. strf("(%s) ", buf.unsaved and "*" or "")
-	s = s .. strf("buf=%d ", editor.bufindex)
-	s = s .. strf("fn=%s ", buf.filename or "")
-	s = s .. strf("ual=%d ", #buf.ual)
 	s = s .. strf("-- Help: ^X^H ", #buf.ual)
 	return s
 end--statusline

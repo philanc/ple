@@ -20,12 +20,12 @@ PLE is ***Work in Progress***! It is not intended to be used for anything seriou
 
 The major limitations the brave tester should consider are:
 - no undo/redo (yet)
-- no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others  characters are displayed as a centered dot (code 183).
+- no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others characters are displayed as a centered dot (code 183).
 - no word- or sentence- or paragraph-based movement.
 - the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
-- no automatic redimensioning of windows for X terminals (no SIGWINCH handling)
-- the status line (at the top of screen, in red) is pretty cryptic :-)  It is mostly used as a debugging aid at the moment.
+- no automatic redimensioning of windows for X terminals 
+(no SIGWINCH handling - but the redisplay function (^L) ) can be invoke to refresh the screen to the new size)
 - no syntax coloring.
 - no clean API yet for extension modules ("modes" a la emacs, syntax coloring, etc.)
 - probably many others things that you would expect from a text editor!
@@ -82,6 +82,10 @@ Misc.
 
 The `term` module includes all the basic functionnalities to display strings in various colors, move the cursor, erase lines and read keys.
 
+This module is at the beginning of the ple.lua file. It does not use any other external library.  The only reason for embedding it within ple.lua is to deliver the editor as a single lua file.
+
+To make it available for other applications, it is also distributed as a separate module. See the [plterm](https://github.com/philanc/plterm) repository.
+
 Like [linenoise](https://github.com/antirez/linenoise), it does not use ncurses, terminfo or termcap. It uses only very common ANSI sequences that are supported by (at least) the Linux console, xterm and rxvt.
 
 The origin of the term module is some code [contributed](http://lua-users.org/lists/lua-l/2009-12/msg00937.html) by Luiz Henrique de Figueiredo on the Lua mailing list some time ago.
@@ -90,7 +94,6 @@ I added some functions for input, getting the cursor position or the screen dime
 
 The input function reads and parses the escape sequences sent by function keys (arrows, F1-F12, insert, delete, etc.). See the definitions in `term.keys`.
 
-This module is at the beginning of the ple.lua file. It can be easily extracted and used independantly for other applications. It does not use any other external library.  The only reason for embedding it within ple.lua is to deliver the editor as a single lua file.
 
 Term functions:
 ```
@@ -135,7 +138,7 @@ restoremode(mode)  -- restore a mode saved by savemode()
 
 ### License
 
-This code is published under a BSD license. Fell free to fork!
+This code is published under a BSD license. Feel free to fork!
 
 
 
