@@ -47,7 +47,7 @@ This module assumes the tty is in raw mode.
 It provides functions based on stty (so available on unix) 
 to save, set and restore tty modes.
 
--- a good ref on ANSI esc sequences:   
+-- just in case, a good ref on ANSI esc sequences:   
 https://en.wikipedia.org/wiki/ANSI_escape_code
 (in the text, "CSI" is "<esc>[")
 
@@ -316,16 +316,22 @@ end
 -- poor man's tty mode management, based on stty
 -- (better use slua linenoise extension if available)
 
+
+-- use the following to define a non standard stty location
+-- eg.:  stty = "/opt/busybox/bin/stty"
+-- 
+local stty = "stty" -- use the default stty
+
 term.setrawmode = function()
-	return os.execute("stty raw -echo 2> /dev/null")
+	return os.execute(stty .. " raw -echo 2> /dev/null")
 end
 
 term.setsanemode = function()
-	return os.execute("stty sane")
+	return os.execute(stty .. " sane")
 end
 
 term.savemode = function()
-	local fh = io.popen("stty -g")
+	local fh = io.popen(stty .. " -g")
 	local mode = fh:read('a')
 	print(mode)
 	local succ, e, msg = fh:close()
@@ -333,7 +339,7 @@ term.savemode = function()
 end
 
 term.restoremode = function(mode)
-	return os.execute("stty " .. mode)
+	return os.execute(stty .. " " .. mode)
 end
 
 -- return term -- END OF TERM MODULE
@@ -468,6 +474,7 @@ local function statusline()
 	s = s .. strf("buf=%d ", editor.bufindex)
 	s = s .. strf("fn=%s ", buf.filename or "")
 	s = s .. strf("ual=%d ", #buf.ual)
+	s = s .. strf("-- Help: ^X^H ", #buf.ual)
 	return s
 end--statusline
 
@@ -1072,12 +1079,30 @@ function e.newbuffer(ll, fname)
 	local b = bufnew(ll) 
 	b.actions = editor.edit_actions 
 	b.filename = fname
-	local bl = editor.buflist
-	bl[#bl+1] = b
-	editor.bufindex = #bl
+	local bi = editor.bufindex + 1 -- insert just after the current buffer
+	table.insert(editor.buflist, bi, b) 
+	editor.bufindex = bi
 	buf = b
 	fullredisplay()
 end
+
+function e.nextbuffer()
+	-- switch to next buffer
+	local bln = #editor.buflist
+	editor.bufindex = editor.bufindex % bln + 1
+	buf = editor.buflist[editor.bufindex]
+	fullredisplay()
+end--nextbuffer
+
+function e.prevbuffer()
+	-- switch to previous buffer
+	local bln = #editor.buflist
+	-- if bufindex>1, the "previous" buffer index should be bufindex-1
+	-- if bufindex==1, the "previous" buffer index should be bln
+	editor.bufindex = (editor.bufindex - 2) % bln + 1
+	buf = editor.buflist[editor.bufindex]
+	fullredisplay()
+end--nextbuffer
 
 function e.findfile()
 	local fn = readstr("Open file: ")
@@ -1104,13 +1129,6 @@ end--writefile
 function e.savefile()
 	e.writefile(buf.filename)
 end--savefile
-
-function e.nextbuffer()
-	local bln = #editor.buflist
-	editor.bufindex = editor.bufindex % bln + 1
-	buf = editor.buflist[editor.bufindex]
-	fullredisplay()
-end--nextbuffer
 
 function e.help()
 	for i, bx in ipairs(editor.buflist) do
@@ -1144,7 +1162,9 @@ function e.test()
 end--atest
 
 editor.helptext = [[
--------------------------- HELP ---------------------------------
+
+*HELP*			-- back to the previous buffer: ^X^P
+
 Cursor movement
 	Arrows, PageUp, PageDown, Home, End
 	^A ^E		go to beginning, end of line
@@ -1169,6 +1189,7 @@ Files, buffers
 	^X^S		save the current buffer
 	^X^B		create a new, empty buffer
 	^X^N		switch to the next buffer
+	^X^P		switch to the previous buffer
 
 Misc.
 	^X^C		exit the editor
@@ -1226,6 +1247,7 @@ editor.ctrlx_actions = {
 	[7] = e.nop,          -- ^X^G (do nothing - cancel ^X prefix)
 	[8] = e.help,         -- ^X^H
 	[14] = e.nextbuffer,  -- ^X^N
+	[16] = e.prevbuffer,  -- ^X^P
 	[19] = e.savefile,    -- ^X^S
 	[23] = e.writefile,   -- ^X^W
 	[24] = e.exch_mark,   -- ^X^X
