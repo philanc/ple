@@ -149,7 +149,7 @@ restoremode(mode)  -- restore a mode saved by savemode()
 
 ### License
 
-This code is published under a BSD license. Feel free to fork!
+This code is published under a MIT license. Feel free to fork!
 
 
 
