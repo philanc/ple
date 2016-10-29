@@ -5,7 +5,7 @@
 
 
 
-License: BSD
+License: MIT
 
 https://github.com/philanc/ple
 
