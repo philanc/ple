@@ -392,6 +392,7 @@ local function bufnew(ll)
 		chgd=true,    -- true if buffer has changed since last display
 		unsaved=false,-- true if buffer content has changed since last save
 		ual = {},     -- undo action list
+		ualtop = 0    -- current top of the undo list (~= #ual !! - see undo)
 		-- box: a rectangular region of the screen where the buffer 
 		--      is displayed (see boxnew() below)
 		--      the box is assigned to the buffer by a layout function.
@@ -662,9 +663,12 @@ local function fullredisplay()
 	-- visually check that edition does not overflow buf box
 	-- (this is for future multiple windows, including side by side)]
 	editor.scrbox = boxnew(1, 1, editor.scrl, editor.scrc)
-	boxfill(editor.scrbox, ' ', style.normal)
+--~ 	-- debug layout
+--~ 	boxfill(editor.scrbox, ' ', style.bckg)
 --~ 	buf.box = boxnew(2, 2, editor.scrl-3, editor.scrc-2)
---~ 	buf.box = boxnew(2, 1, editor.scrl-3, editor.scrc)
+	--
+	-- regular layout
+	boxfill(editor.scrbox, ' ', style.normal)
 	buf.box = boxnew(2, 1, editor.scrl-2, editor.scrc)
 	buf.chgd = true
 	redisplay(buf)
@@ -784,8 +788,8 @@ local function cureot() return not ateot() and setcur() end
 
 local ualpush -- defined further down with all undo functions
 
-local function bufins(sl)
-	ualpush('ins', sl)
+local function bufins(sl, no_undo)
+	if not no_undo then ualpush('ins', sl) end
 	local ci, cj = getcur()
 	local l = buf.ll[ci]
 	local l1, l2 = l:sub(1,cj), l:sub(cj+1)
@@ -813,8 +817,8 @@ local function bufins(sl)
 	return true
 end--bufins
 
-local function bufdel(di, dj)
-	ualpush('del', getlines(di, dj))
+local function bufdel(di, dj, no_undo)
+	if not no_undo then ualpush('del', getlines(di, dj)) end
 	local ci, cj = getcur()
 	local l1, l2 = buf.ll[ci]:sub(1,cj), buf.ll[di]:sub(dj+1)
 	if di == ci then -- delete in current line at cursor
@@ -832,34 +836,54 @@ end--bufdel
 
 
 ------------------------------------------------------------------------
--- undo functions  !! NOT IMPLEMENTED YET !!
+-- undo functions  
 
-function ualpush(op, s)
-	-- do nothing - no Undo yet!
-end
+--~ function ualpush(op, s)
+--~ 	-- do nothing - no Undo yet!
+--~ end
 
---[[
-function ualpush(op, s)
-	-- push enough context to be able to undo a core operation
-	-- (setline, openline, joinline)
+function ualpush(op, sl)
+	-- push enough context to be able to undo a core operation (ins, del)
 	local top = #buf.ual
+	if top > buf.ualtop then -- remove the remaining redo actions
+		for i = top, buf.ualtop+1, -1 do table.remove(buf.ual, i) end
+		assert(#buf.ual == buf.ualtop)
+	end
 	local last = buf.ual[top]
-	if last and last.op == "set" and op == "set" and buf.ci == last.ci then
-		-- all sequential 'set' actions on the same line are 
-		-- bundled together in the same record
-		last.s = s
-		return
-	end
-	local rec = {op=op, ci=buf.ci, cj=buf.cj}
-	if op == "set" then
-		rec.ol = getline()
-		rec.l = s
-	end
-	table.insert(buf.ual, rec)
+--~ 	if last and last.op == "set" and op == "set" and buf.ci == last.ci then
+--~ 		-- all sequential 'set' actions on the same line are 
+--~ 		-- bundled together in the same record
+--~ 		last.s = s
+--~ 		return
+--~ 	end
+	if type(sl) == "string" then sl = { sl } end
+	sl.op, sl.ci, sl.cj = op, buf.ci, buf.cj
+	table.insert(buf.ual, sl)
+	buf.ualtop = buf.ualtop + 1
 	return
 end
 
-]]
+local function op_undo(sl)
+	setcur(sl.ci, sl.cj)
+	if sl.op == "del" then 
+		return bufins(sl, true)
+	elseif sl.op == "ins" then
+		return bufdel(sl.ci+#sl-1, sl.cj+#sl[#sl], true)
+	else
+		return nil, "unknown op"
+	end
+end
+
+local function op_redo(sl)
+	setcur(sl.ci, sl.cj)
+	if sl.op == "ins" then 
+		return bufins(sl, true)
+	elseif sl.op == "del" then
+		return bufdel(sl.ci+#sl-1, #sl[#sl], true)
+	else
+		return nil, "unknown op"
+	end
+end
 
 
 ------------------------------------------------------------------------
@@ -1078,6 +1102,43 @@ function e.yank()
 	return bufins(editor.kll)
 end--yank
 
+function e.undointer()
+	local top = #buf.ual
+	if top == 0 then msg("nothing to undo!"); return end
+	local m = ""
+	while true do
+		dbg("ual=%d top=%d ", #buf.ual, top)
+--~ 		op_undo(buf.ual[top])
+--~ 		top = top - 1
+		if top == 0 then m = "nothing left to undo!  " end
+		local ch = readchar(m 
+			.. "(u)ndo more  (r)edo  (q)uit (^G) ", "[urq]")
+		if not ch or ch == 'q' then break end	
+		if ch == 'u' and top > 0 then
+			op_undo(buf.ual[top])
+			top = top - 1
+		elseif ch == 'r' and top < #buf.ual then
+			m = ""
+			top = top + 1
+			op_redo(buf.ual[top])
+		end
+	end--while
+	msg("") --erase the undo prompt
+	return e.undo
+end--undointer
+
+function e.undo()
+	if buf.ualtop == 0 then msg("nothing to undo!"); return end
+	op_undo(buf.ual[buf.ualtop])
+	buf.ualtop = buf.ualtop - 1
+end--undo
+
+function e.redo()
+	if buf.ualtop == #buf.ual then msg("nothing to redo!"); return end
+	buf.ualtop = buf.ualtop + 1
+	op_redo(buf.ual[buf.ualtop])
+end--redo
+
 function e.quiteditor()
 	editor.quit = true
 end
@@ -1261,6 +1322,7 @@ editor.edit_actions = { -- actions binding for text edition
 	[23] = e.wipe,         -- ^W
 	[24] = e.ctrlx,        -- ^X
 	[25] = e.yank,         -- ^Y
+	[26] = e.undo,         -- ^Z
 	[27] = e.esc,          -- ESC
 	--
 	[keys.kpgup]  = e.pgup,
@@ -1298,6 +1360,7 @@ editor.esc_actions = {
 	[60] = e.gobot,  -- esc <
 	[62] = e.goeot,  -- esc >
 	[107] = e.killeol,  -- esc k
+	[122] = e.redo,  -- esc z
 }--esc_actions
 
 function editor_loop(ll, fname)
