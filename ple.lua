@@ -467,6 +467,12 @@ local function status(m)
 	out(m); style.normal(); flush()
 end
 
+local dbgs = "::"
+local function dbg(s, ...)
+	dbgs = strf(s, ...)
+end
+	
+
 local function statusline()
 	local s = strf("cur=%d,%d ", buf.ci, buf.cj)
 	if buf.si then s = s .. strf("sel=%d,%d ", buf.si, buf.sj) end
@@ -474,10 +480,11 @@ local function statusline()
 --~ 	s = s .. strf("li=%d ", buf.li)
 --~ 	s = s .. strf("hs=%d ", buf.hs)
 --~ 	s = s .. strf("ual=%d ", #buf.ual)
---~ 	s = s .. strf("buf=%d ", editor.bufindex)
+	s = s .. strf("buf=%d ", editor.bufindex)
 	s = s .. strf("[%s] ", buf.filename or "unnamed")
 	s = s .. strf("(%s) ", buf.unsaved and "*" or "")
-	s = s .. strf("-- Help: ^X^H ", #buf.ual)
+--~ 	s = s .. strf("-- Help: ^X^H ", #buf.ual)
+	s = s .. dbgs
 	return s
 end--statusline
 
@@ -652,7 +659,8 @@ local function fullredisplay()
 	--
 	editor.scrl, editor.scrc = term.getscrlc()
 	-- [TMP!! editor.scrbox is a bckgnd box with a pattern to
-	-- visually check that edition does not overflow buf box]
+	-- visually check that edition does not overflow buf box
+	-- (this is for future multiple windows, including side by side)]
 	editor.scrbox = boxnew(1, 1, editor.scrl, editor.scrc)
 	boxfill(editor.scrbox, ' ', style.normal)
 --~ 	buf.box = boxnew(2, 2, editor.scrl-3, editor.scrc-2)
@@ -672,7 +680,7 @@ editor.fullredisplay = fullredisplay
 -- 		This will make it easier to change or enrich the 
 -- 		representation later. (eg. syntax coloring, undo/redo, ...)
 
--- various predicate and 'get' functions
+-- various predicates and accessors
 
 -- test if at end / beginning of  line  (eol, bol)
 local function ateol() return buf.cj >= #buf.ll[buf.ci] end
@@ -691,12 +699,36 @@ end
 local function getcur() return buf.ci, buf.cj end
 local function getsel() return buf.si, buf.sj end
 
+local function geteol() 
+	-- return coord of current end of line
+	local ci = buf.ci
+	return ci, #buf.ll[ci]
+end
+
 local function getline(i)
 	-- return current line and cursor position in line
 	-- if i is provided, return line i
 	if i then return buf.ll[i], 1 end
 	return buf.ll[buf.ci], buf.cj
 end
+
+local function getlines(di, dj)
+	-- return the text between the cursor and point (di, dj) as
+	-- a list of lines. this assumes that (di, dj) is after the cursor.
+	local ci, cj = getcur()
+	if di == ci then
+		return { buf.ll[ci]:sub(cj+1, dj) }
+	end
+	local sl = {}
+	for i = ci, di do
+		local l = buf.ll[i]
+		if i == ci then l = l:sub(cj+1) end
+		if i == di then l = l:sub(1, dj) end
+		table.insert(sl, l)
+	end
+	return sl
+end--getlines
+
 
 -- cursor movement
 
@@ -722,7 +754,8 @@ local function addcur(di, dj) -- move cursor relative
 	return true
 end
 
--- cursor movement -- return true, or nil/false if movement is not possible
+-- buffer cursor movement 
+-- return true, or nil/false if movement is not possible
 local function curhome() buf.cj = 0; return true end
 local function curend() setcur(buf.ci); return true end
 local function curright() return not ateol() and addcur(0, 1) end
@@ -732,52 +765,70 @@ local function curdown() return not atlast() and addcur(1, 0) end
 local function curbot() return not atbot() and setcur(1, 0) end
 local function cureot() return not ateot() and setcur() end
 
--- modification at cursor line
+-- modification at cursor
+-- all modifications should be performed by the following functions:
+--	  bufins(strlist)
+--		insert list of string at cursor. if strlist is a string, it is
+--      equivalent to a list with only one element 
+--		if buffer contains one line "abc" and cursor is between b and c
+--		(ie screen cursor is on 'c') then 
+--		bufins{"xx"}  changes the buffer line to "abxxc"
+--		bufins{"xx", "yy"}  now the buffer has two lines: "abxx", "yyc"
+--		bufins{"", ""}  inserts a newline:   "ab", "c"
+--   bufdel(di, dj)
+--		delete all characters between the cursor and point (di, dj)
+--		(bufdel assumes that di, dj is after the cursor)
+--		if the buffer is  ("abxx", "yyc") and the cursor is just after 'b',
+--		bufdel(2,2) changes the buffer to ("abc")
+		
 
 local ualpush -- defined further down with all undo functions
 
-local function setline(s)
-	ualpush('set', s)
-	buf.ll[buf.ci] = s
-	buf.chgd = true
-	buf.unsaved = true
-	return true
-end
-
-local function openline()
-	-- split the current line at the cursor in two lines 
-	-- (equivalent to inserting a newline char at cursor)
-	-- does not change the cursor position
-	-- (undone with joinline)
-	if atbol() then
-		table.insert(buf.ll, buf.ci, "")
-	elseif ateol() then 
-		table.insert(buf.ll, buf.ci+1, "")
-	else
-		local l, cj = getline()
-		buf.ll[buf.ci] = l:sub(1, cj)
-		table.insert(buf.ll, buf.ci+1, l:sub(cj + 1))
+local function bufins(sl)
+	ualpush('ins', sl)
+	local ci, cj = getcur()
+	local l = buf.ll[ci]
+	local l1, l2 = l:sub(1,cj), l:sub(cj+1)
+	local s1 = nil
+	if type(sl) == "string" then	s1 = sl
+	elseif #sl == 1 then  s1 = sl[1]
 	end
-	ualpush('open')
+	if s1 then -- insert s1 in current line
+		buf.ll[ci] = l1 .. s1 .. l2
+		setcur(ci, cj + #s1)
+	else -- several lines in sl
+		buf.ll[ci] = l1 .. sl[1]
+		ci = ci + 1
+		for i = 2, #sl-1 do
+			table.insert(buf.ll, ci, sl[i])
+			ci = ci + 1
+		end
+		local last = sl[#sl]
+		cj = #last
+		table.insert(buf.ll, ci, last .. l2)
+		setcur(ci, cj)
+	end
 	buf.chgd = true
 	buf.unsaved = true
 	return true
-end--openline
+end--bufins
 
-local function joinline()
-	-- join the current line with the next
-	-- (equivalent to deleting a newline at end of line)
-	-- does not change the cursor position
-	-- must be called only when the cursor is at end of line
-	-- (undone with openline)
-	if ateot() then return false end
-	assert(ateol(), "must be at end of line")
-	buf.ll[buf.ci] = buf.ll[buf.ci] .. table.remove(buf.ll, buf.ci+1)
-	ualpush('join')
+local function bufdel(di, dj)
+	ualpush('del', getlines(di, dj))
+	local ci, cj = getcur()
+	local l1, l2 = buf.ll[ci]:sub(1,cj), buf.ll[di]:sub(dj+1)
+	if di == ci then -- delete in current line at cursor
+		buf.ll[ci] = l1 .. l2
+	else -- delete several lines
+		for i = ci+1, di do
+			table.remove(buf.ll, i)
+		end
+		buf.ll[ci] = l1 .. l2
+	end
 	buf.chgd = true
 	buf.unsaved = true
 	return true
-end--joinline
+end--bufdel
 
 
 ------------------------------------------------------------------------
@@ -845,15 +896,14 @@ function e.pgdn() for i = 1, buf.box.l - 2 do curdown() end end
 function e.pgup() for i = 1, buf.box.l - 2 do curup() end end
 
 function e.nl()
-	return openline() and curdown() and curhome()
+	return bufins({"", ""})
 end
 
 function e.del()
 	if ateot() then return false end
-	if ateol() then return joinline() end
-	local l, cj = getline()
-	setline(l:sub(1,cj) .. l:sub(cj+2))
-	return true
+	local ci, cj = getcur()
+	if ateol() then return bufdel(ci+1, 0) end
+	return bufdel(ci, cj+1)
 end
 
 function e.bksp()
@@ -861,9 +911,7 @@ function e.bksp()
 end
 
 function e.insch(k)
-	local l, cj = getline()
-	setline(l:sub(1, cj) .. char(k) .. l:sub(cj+1))
-	curright()
+	bufins(char(k))
 end
 
 function e.ctrlx()
@@ -921,15 +969,12 @@ function e.replaceagain()
 	local replall = false -- true if user selected "replace (a)ll"
 	local n = 0 -- number of replaced instances
 	function replatcur()
-		-- replace at cursor (called only when editor.pat is found
-		-- at cursor)
-		local l, cj = getline()
-		-- don't use gsub (pat and patrepl are plain text, unescaped)
-		local l1, l2 = l:sub(1, cj), l:sub(cj + #editor.pat + 1)
-		setline(l1 .. editor.patrepl .. l2)
-		setcurj(cj + #editor.patrepl)
-		n = n + 1
-		return true
+		-- replace at cursor 
+		-- (called only when editor.pat is found at cursor)
+		-- (pat and patrepl are plain text, unescaped)
+		n = n + 1  --one more replaced instance
+		local ci, cj = getcur()
+		return bufdel(ci, cj + #editor.pat) and bufins(editor.patrepl)
 	end--replatcur
 	function replfn()
 		-- this function is called each time editor.pat is found
@@ -970,13 +1015,14 @@ function e.replace()
 	return e.replaceagain()
 end--replace
 
-function e.kill(appflag) 
+function e.kill() 
 	-- wipe from cursor to end of line
 	-- del nl but do not modify the kill buffer if at eol
 	if ateol() then return e.del() end
-	local l, cj = getline()
-	editor.kll = { l:sub(cj+1) }
-	return setline(l:sub(1, cj))
+	local di, dj = geteol()
+	sl = getlines(di, dj)
+	editor.kll = sl
+	return bufdel(di, dj)
 end--kill
 
 function e.killeol(appflag)
@@ -985,7 +1031,6 @@ function e.killeol(appflag)
 	-- if appflag is true, always append to the kill buffer (default: false)
 	-- (be careful if modifying this. it is also used by e.wipe())
 	if ateot() then return end
-	local l, cj = getline()
 	appflag = appflag or (editor.lastresult == e.killeol)
 	if not appflag then -- start with a fresh kill buffer
 		editor.kll = {}
@@ -994,10 +1039,11 @@ function e.killeol(appflag)
 		-- or last item is an empty line => remove it
 		table.remove(editor.kll)
 	end
-	table.insert(editor.kll, l:sub(cj+1))
-	table.insert(editor.kll, "")
-	setline(l:sub(1, cj))
-	joinline()
+	local di, dj = geteol()
+	local s = getlines(di, dj)[1]
+	table.insert(editor.kll, s)  -- insert the end of line
+	table.insert(editor.kll, "") -- insert a newline
+	bufdel(di+1, 0) -- del to bol of next line
 	-- allow to detect that previous command was also killeol
 	return e.killeol 
 end--killeol
@@ -1017,39 +1063,19 @@ end
 
 function e.wipe()
 	if not buf.si then msg("No selection."); return end
-	editor.kll = {}
 	-- make sure cursor is at beg of selection
 	if markbeforecur() then e.exch_mark() end 
-	e.exch_mark(); e.nl() -- open line at end of selection
-	e.exch_mark() -- back to beginning of selection
-	local ci, cj = getcur()
 	local si, sj = getsel()
-	for i = ci+1, si do e.killeol(true) end
-	-- remove the nl added at end of selection from the kill buffer
-	table.remove(editor.kll)
+	editor.kll = getlines(si, sj)
+	bufdel(si, sj)
 	buf.si = nil
 end--wipe	
 
 function e.yank()
 	if not editor.kll or #editor.kll == 0 then 
-		msg("nothing to yank!"); return end
-	local l = getline()
-	local ci, cj = getcur()
-	local l1, l2 = l:sub(1, cj), l:sub(cj+1)
-	if #editor.kll == 1 then 
-		setline(l1 .. editor.kll[1] .. l2)
-		setcur(ci, cj + #editor.kll[1])
-		return
+		msg("nothing to yank!"); return 
 	end
-	local kln = #editor.kll
-	setline(l1 .. editor.kll[1])
-	for i = 2, kln-1  do
-		curend(); e.nl(); setline(editor.kll[i])
-	end
-	curend()
-	e.nl()
-	setline(editor.kll[kln] .. l2)
-	ci, cj = getcur(); setcur(ci, #editor.kll[kln])
+	return bufins(editor.kll)
 end--yank
 
 function e.quiteditor()
