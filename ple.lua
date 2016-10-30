@@ -1257,9 +1257,12 @@ Edition
 	^H, bcksp	delete previous character
 	^K			cut from cursor to end of line
 	esc-k       cut from cursor to beginning of next line
+				(if repeated, lines are appended to the paste buffer)
 	^space, ^@	mark  (set beginning of selection)
 	^W			wipe (cut selection)
 	^Y			yank (paste)
+	esc-5		replace
+	esc-7		replace again (with same strings)
 
 Files, buffers
 	^X^F		prompt for a filename, read the file in a new buffer
@@ -1272,6 +1275,8 @@ Files, buffers
 Misc.
 	^X^C		exit the editor
 	^G			abort the current command
+	^Z			undo 
+	esc-z		redo 
 	^L			redisplay the screen (useful if the screen was garbled
 				or its dimensions changed)
 	F1, ^X^H	this help text

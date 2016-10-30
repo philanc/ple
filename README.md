@@ -19,9 +19,8 @@ PLE has been inspired by Antirez' [Kilo](https://github.com/antirez/kilo) editor
 PLE is ***Work in Progress***! It is not intended to be used for anything serious, at least for the moment.
 
 The major limitations the brave tester should consider are:
-- no undo/redo (yet)
 - no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others characters are displayed as a centered dot (code 183).
-- TAB length is set to 4
+- TAB length is set to 4 for all buffers
 - no word- or sentence- or paragraph-based movement.
 - the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
@@ -37,11 +36,12 @@ On the other hand, the editor already support:
 - basic search and replace functions (plain text only)
 - support for long lines (horizontal scroll, no provision for wrapping long lines)
 - selection, selection highlight, cut and paste (mark, wipe and yank in emacs parlance)
+- crude undo/redo functions
 - multiple buffers (but just one window at a time for the moment)
 - read, write, save files.
 - a minimal help command (F1 or ^X^H - give a short description of the basic bindings)
 
-At the moment, the complete editor is 35KB. It has been tested on xterm, rxvt and the Linux console. 
+At the moment, the complete editor is 37KB. It has been tested on xterm, rxvt and the Linux console. 
 
 As they say, *it works on my PC...*
 
@@ -49,12 +49,14 @@ As they say, *it works on my PC...*
 ### Default key bindings
 
 ```
+
 Cursor movement
 	Arrows, PageUp, PageDown, Home, End
 	^A ^E		go to beginning, end of line
 	^B ^F		go backward, forward
 	^N ^P		go to next line, previous line
-	esc-< esc-> go to beginning, end of buffer
+	esc-< 		go to beginning of buffer
+	esc-> 		go to end of buffer
 	^S			forward search (plain text, case sensitive)
 	^R			search again (string previously entered with ^S)
    
@@ -63,9 +65,12 @@ Edition
 	^H, bcksp	delete previous character
 	^K			cut from cursor to end of line
 	esc-k       cut from cursor to beginning of next line
+				(if repeated, lines are appended to the paste buffer)
 	^space, ^@	mark  (set beginning of selection)
 	^W			wipe (cut selection)
 	^Y			yank (paste)
+	esc-5		replace
+	esc-7		replace again (with same strings)
 
 Files, buffers
 	^X^F		prompt for a filename, read the file in a new buffer
@@ -78,9 +83,12 @@ Files, buffers
 Misc.
 	^X^C		exit the editor
 	^G			abort the current command
+	^Z			undo 
+	esc-z		redo 
 	^L			redisplay the screen (useful if the screen was garbled
 				or its dimensions changed)
 	F1, ^X^H	this help text
+
 	
 ```
 
