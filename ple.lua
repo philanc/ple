@@ -789,7 +789,13 @@ local function cureot() return not ateot() and setcur() end
 local ualpush -- defined further down with all undo functions
 
 local function bufins(sl, no_undo)
-	if not no_undo then ualpush('ins', sl) end
+	local slc = {} -- dont push directly sl. make a copy.
+	if type(sl) == "string" then 
+		slc[1] = sl
+	else
+		for i = 1, #sl do slc[i] = sl[i] end
+	end
+	if not no_undo then ualpush('ins', slc) end
 	local ci, cj = getcur()
 	local l = buf.ll[ci]
 	local l1, l2 = l:sub(1,cj), l:sub(cj+1)
@@ -824,8 +830,10 @@ local function bufdel(di, dj, no_undo)
 	if di == ci then -- delete in current line at cursor
 		buf.ll[ci] = l1 .. l2
 	else -- delete several lines
-		for i = ci+1, di do
-			table.remove(buf.ll, i)
+		local ci1 = ci + 1
+		for i = ci1, di do
+			-- the next line to remove is always the line at ci+1
+			table.remove(buf.ll, ci1) 
 		end
 		buf.ll[ci] = l1 .. l2
 	end
@@ -844,19 +852,16 @@ end--bufdel
 
 function ualpush(op, sl)
 	-- push enough context to be able to undo a core operation (ins, del)
+	-- sl is always a list of lines
 	local top = #buf.ual
 	if top > buf.ualtop then -- remove the remaining redo actions
 		for i = top, buf.ualtop+1, -1 do table.remove(buf.ual, i) end
 		assert(#buf.ual == buf.ualtop)
 	end
 	local last = buf.ual[top]
---~ 	if last and last.op == "set" and op == "set" and buf.ci == last.ci then
---~ 		-- all sequential 'set' actions on the same line are 
---~ 		-- bundled together in the same record
---~ 		last.s = s
---~ 		return
---~ 	end
-	if type(sl) == "string" then sl = { sl } end
+	
+	-- try to merge successive insch()
+
 	sl.op, sl.ci, sl.cj = op, buf.ci, buf.cj
 	table.insert(buf.ual, sl)
 	buf.ualtop = buf.ualtop + 1
@@ -879,7 +884,7 @@ local function op_redo(sl)
 	if sl.op == "ins" then 
 		return bufins(sl, true)
 	elseif sl.op == "del" then
-		return bufdel(sl.ci+#sl-1, #sl[#sl], true)
+		return bufdel(sl.ci+#sl-1, sl.cj+#sl[#sl], true)
 	else
 		return nil, "unknown op"
 	end
@@ -1101,31 +1106,6 @@ function e.yank()
 	end
 	return bufins(editor.kll)
 end--yank
-
-function e.undointer()
-	local top = #buf.ual
-	if top == 0 then msg("nothing to undo!"); return end
-	local m = ""
-	while true do
-		dbg("ual=%d top=%d ", #buf.ual, top)
---~ 		op_undo(buf.ual[top])
---~ 		top = top - 1
-		if top == 0 then m = "nothing left to undo!  " end
-		local ch = readchar(m 
-			.. "(u)ndo more  (r)edo  (q)uit (^G) ", "[urq]")
-		if not ch or ch == 'q' then break end	
-		if ch == 'u' and top > 0 then
-			op_undo(buf.ual[top])
-			top = top - 1
-		elseif ch == 'r' and top < #buf.ual then
-			m = ""
-			top = top + 1
-			op_redo(buf.ual[top])
-		end
-	end--while
-	msg("") --erase the undo prompt
-	return e.undo
-end--undointer
 
 function e.undo()
 	if buf.ualtop == 0 then msg("nothing to undo!"); return end
