@@ -224,7 +224,8 @@ term.input = function()
 			end
 			c2 = getcode()
 			s = char(c1, c2)
-			if c2 == LBR then -- esc[[x sequences (F1-F5 in linux console)
+			if c2 == LBR then 
+				-- esc[[x sequences (F1-F5 in linux console)
 				s = s .. char(getcode())
 			end
 			if seq[s] then 
@@ -243,13 +244,15 @@ term.input = function()
 						yield(seq[s])
 						goto continue
 					else
-						-- valid but unknown sequence - ignore it
+						-- valid but unknown sequence 
+						-- ignore it
 						yield(keys.unknown)
 						goto continue
 					end
 				end
 				if not isdigitsc(ci) then
-					-- not a valid seq. return all the chars
+					-- not a valid seq
+					-- return all the chars
 					yield(ESC)
 					for i = 1, #s do yield(byte(s, i)) end
 					goto continue
@@ -509,7 +512,8 @@ local function ccrepr(b, j)
 end --ccrepr
 
 local function boxline(b, hs, bl, l, insel, jon, joff)
-	-- display line l at the bl-th line of box b, with horizontal scroll hs
+	-- display line l at the bl-th line of box b, 
+	-- with horizontal scroll hs
 	-- if s is tool long for the box, return the
 	-- index of the first undisplayed char in l
 	-- insel: true if line start is in the selection
@@ -779,19 +783,20 @@ function buffer.cureot(b) return not b:ateot() and b:setcur() end
 
 -- modification at cursor
 -- all modifications should be performed by the following functions:
---	  bufins(strlist)
---		insert list of string at cursor. if strlist is a string, it is
---      equivalent to a list with only one element 
---		if buffer contains one line "abc" and cursor is between b and c
---		(ie screen cursor is on 'c') then 
---		bufins{"xx"}  changes the buffer line to "abxxc"
---		bufins{"xx", "yy"}  now the buffer has two lines: "abxx", "yyc"
---		bufins{"", ""}  inserts a newline:   "ab", "c"
+--   bufins(strlist)
+--	insert list of string at cursor. if strlist is a string, it is
+--	equivalent to a list with only one element 
+--	if buffer contains one line "abc" and cursor is between b and c
+--	(ie screen cursor is on 'c') then 
+--	bufins{"xx"}  changes the buffer line to "abxxc"
+--	bufins{"xx", "yy"}  now the buffer has two lines: "abxx", "yyc"
+--	bufins{"", ""}  inserts a newline:   "ab", "c"
+--
 --   bufdel(di, dj)
---		delete all characters between the cursor and point (di, dj)
---		(bufdel assumes that di, dj is after the cursor)
---		if the buffer is  ("abxx", "yyc") and the cursor is just after 'b',
---		bufdel(2,2) changes the buffer to ("abc")
+--	delete all characters between the cursor and point (di, dj)
+--	(bufdel assumes that di, dj is after the cursor)
+--	if the buffer is  ("abxx", "yyc") and the cursor is just after 'b',
+--	bufdel(2,2) changes the buffer to ("abc")
 		
 
 local ualpush -- defined further down with all undo functions
@@ -1067,11 +1072,12 @@ end--kill
 function e.killeol(b, appflag)
 	-- wipe from cursor to eol included. copy to the kill buffer
 	-- or append to the kill buffer if last action was also 'killeol'
-	-- if appflag is true, always append to the kill buffer (default: false)
-	-- (be careful if modifying this. it is also used by e.wipe())
+	-- if appflag is true, always append to the kill buffer 
+	-- (default: false)
 	if b:ateot() then return end
 	appflag = appflag or (editor.lastresult == e.killeol)
-	if not appflag then -- start with a fresh kill buffer
+	if not appflag then 
+		-- start with a fresh kill buffer
 		editor.kll = {}
 	else
 		-- here either kll is empty 
@@ -1168,7 +1174,8 @@ function e.newbuffer(ll, fname)
 	local bx = buffer.new(ll) 
 	bx.actions = editor.edit_actions 
 	bx.filename = fname
-	local bi = editor.bufindex + 1 -- insert just after the current buffer
+	-- insert just after the current buffer
+	local bi = editor.bufindex + 1 
 	table.insert(editor.buflist, bi, bx) 
 	editor.bufindex = bi
 	buf = bx
@@ -1342,8 +1349,8 @@ editor.ctrlx_actions = {
 	[6] = e.findfile,	-- ^X^F
 	[7] = e.nop,		-- ^X^G (do nothing - cancel ^X prefix)
 	[8] = e.help,		-- ^X^H
-	[14] = e.nextbuffer,-- ^X^N
-	[16] = e.prevbuffer,-- ^X^P
+	[14] = e.nextbuffer,	-- ^X^N
+	[16] = e.prevbuffer,	-- ^X^P
 	[19] = e.savefile,	-- ^X^S
 	[23] = e.writefile,	-- ^X^W
 	[24] = e.exch_mark,	-- ^X^X
