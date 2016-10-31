@@ -20,7 +20,7 @@ PLE is ***Work in Progress***! It is not intended to be used for anything seriou
 
 The major limitations the brave tester should consider are:
 - no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others characters are displayed as a centered dot (code 183).
-- TAB length is set to 4 for all buffers
+- TAB length is set to 8 for all buffers
 - no word- or sentence- or paragraph-based movement.
 - the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
@@ -55,20 +55,20 @@ Cursor movement
 	^A ^E		go to beginning, end of line
 	^B ^F		go backward, forward
 	^N ^P		go to next line, previous line
-	esc-< 		go to beginning of buffer
+	esc-<		go to beginning of buffer
 	esc-> 		go to end of buffer
-	^S			forward search (plain text, case sensitive)
-	^R			search again (string previously entered with ^S)
+	^S		forward search (plain text, case sensitive)
+	^R		search again (string previously entered with ^S)
    
 Edition
 	^D, Delete	delete character at cursor
 	^H, bcksp	delete previous character
-	^K			cut from cursor to end of line
-	esc-k       cut from cursor to beginning of next line
-				(if repeated, lines are appended to the paste buffer)
+	^K		cut from cursor to end of line
+	esc-k		cut from cursor to beginning of next line
+			(if repeated, lines are appended to the paste buffer)
 	^space, ^@	mark  (set beginning of selection)
-	^W			wipe (cut selection)
-	^Y			yank (paste)
+	^W		wipe (cut selection)
+	^Y		yank (paste)
 	esc-5		replace
 	esc-7		replace again (with same strings)
 
@@ -82,14 +82,14 @@ Files, buffers
 
 Misc.
 	^X^C		exit the editor
-	^G			abort the current command
-	^Z			undo 
+	^G		abort the current command
+	^Z		undo 
 	esc-z		redo 
-	^L			redisplay the screen (useful if the screen was garbled
-				or its dimensions changed)
+	^L		redisplay the screen (useful if the screen was 
+			garbled	or its dimensions changed)
 	F1, ^X^H	this help text
 
-	
+]]
 ```
 
 ### Usage
