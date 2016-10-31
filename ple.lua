@@ -466,10 +466,10 @@ function editor.statusline()
 --~ 	s = s .. strf("li=%d ", buf.li)
 --~ 	s = s .. strf("hs=%d ", buf.hs)
 --~ 	s = s .. strf("ual=%d ", #buf.ual)
-	s = s .. strf("buf=%d ", editor.bufindex)
+--~ 	s = s .. strf("buf=%d ", editor.bufindex)
 	s = s .. strf("[%s] ", buf.filename or "unnamed")
 	s = s .. strf("(%s) ", buf.unsaved and "*" or "")
---~ 	s = s .. strf("-- Help: ^X^H ", #buf.ual)
+	s = s .. strf("-- Help: ^X^H ", #buf.ual)
 	s = s .. dbgs
 	return s
 end--statusline
@@ -802,6 +802,7 @@ function buffer.cureot(b) return not b:ateot() and b:setcur() end
 local ualpush -- defined further down with all undo functions
 
 function buffer.bufins(b, sl, no_undo)
+	-- if no_undo is true, don't record the modification
 	local slc = {} -- dont push directly sl. make a copy.
 	if type(sl) == "string" then 
 		slc[1] = sl
@@ -837,6 +838,7 @@ function buffer.bufins(b, sl, no_undo)
 end--bufins
 
 function buffer.bufdel(b, di, dj, no_undo)
+	-- if no_undo is true, don't record the modification
 	if not no_undo then ualpush(b, 'del', b:getlines(di, dj)) end
 	local ci, cj = b:getcur()
 	local l1, l2 = b.ll[ci]:sub(1,cj), b.ll[di]:sub(dj+1)
@@ -858,10 +860,6 @@ end--bufdel
 
 ------------------------------------------------------------------------
 -- undo functions  
-
---~ function ualpush(op, s)
---~ 	-- do nothing - no Undo yet!
---~ end
 
 function ualpush(b, op, sl)
 	-- push enough context to be able to undo a core operation (ins, del)
