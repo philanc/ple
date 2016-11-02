@@ -378,6 +378,8 @@ local editor = {
 	nextk = term.input(), -- the "read next key" function
 	buflist = {},  -- list of buffers
 	bufindex = 0,  -- index of current buffer
+	macrorec = false,	-- currently recording a macro
+	macroseq = {},		-- current macro sequence of action
 }
 
 -- buf is the current buffer
@@ -469,6 +471,7 @@ function editor.statusline()
 --~ 	s = s .. strf("buf=%d ", editor.bufindex)
 	s = s .. strf("[%s] ", buf.filename or "unnamed")
 	s = s .. strf("(%s) ", buf.unsaved and "*" or "")
+	s = s .. strf("%s ", editor.macrorec and "REC" or "")
 	s = s .. strf("-- Help: ^X^H ", #buf.ual)
 	s = s .. dbgs
 	return s
@@ -1200,6 +1203,40 @@ function e.savefile(b)
 	e.writefile(b.filename)
 end--savefile
 
+local function macrorecord(x)
+	if not editor.macrorec then return end
+	table.insert(editor.macroseq, x)
+end
+
+function e.macrostartrec(buf)
+	editor.macroseq = {}
+	editor.macrorec = true
+end
+
+function e.macrostoprec(buf)
+	editor.macrorec = false
+end
+
+function e.macroplay() 
+	-- should not pass buf to use the current buffer 
+	-- for macros switching buffers)
+	if #editor.macroseq == 0 then
+		return msg("no macro defined!")
+	elseif editor.macrorec then 
+		editor.macrorec = false
+		editor.macroseq = {}
+		return msg("Cannot play while recording. Aborted.")
+	end	
+	for i, act in ipairs(editor.macroseq) do
+		if type(act) == "number" then 
+			e.insch(buf, act)
+		else
+			act(buf)
+		end
+	end
+end
+
+
 function e.help()
 	for i, bx in ipairs(editor.buflist) do
 		if bx.filename == "*HELP*" then
@@ -1273,6 +1310,9 @@ Misc.
 	^G		abort the current command
 	^Z		undo 
 	esc-z		redo 
+	^X(		record macro
+	^X)		stop recording macro
+	^Xe, ^play macro
 	^L		redisplay the screen (useful if the screen was 
 			garbled	or its dimensions changed)
 	F1, ^X^H	this help text
@@ -1298,7 +1338,7 @@ editor.bindings = { -- actions binding for text edition
 	[12] = e.redisplay,	-- ^L
 	[13] = e.nl,		-- ^M (insert newline)
 	[14] = e.godown,	-- ^N
-	--[15]		-- ^O
+	[15] = e.macroplay,	-- ^O
 	[16] = e.goup,		-- ^P
 	[17] = e.quiteditor,	-- ^Q
 	[18] = e.searchagain,	-- ^R
@@ -1311,6 +1351,7 @@ editor.bindings = { -- actions binding for text edition
 	[25] = e.yank,		-- ^Y
 	[26] = e.undo,		-- ^Z
 	-- [27] 		-- ESC (prefix - see below)
+	[29] = e.macroplay,	-- ^]
 	--
 	[keys.kpgup]  = e.pgup,
 	[keys.kpgdn]  = e.pgdn,
@@ -1337,6 +1378,9 @@ editor.bindings = { -- actions binding for text edition
 		[19] = e.savefile,	-- ^X^S
 		[23] = e.writefile,	-- ^X^W
 		[24] = e.exch_mark,	-- ^X^X
+		[40] = e.macrostartrec,	-- ^X(
+		[41] = e.macrostoprec,	-- ^X)
+		[101] = e.macroplay,	-- ^Xe
 	},
 	[27] = {	-- ESC
 		[7] = e.nop,		-- esc^G (cancel selection)
@@ -1379,10 +1423,12 @@ function editor_loop(ll, fname)
 		end
 		if act then 
 			msg(kname)
+			macrorecord(act)
 			editor.lastresult = act(buf)
 		elseif (not k2) and ((k >= 32 and k < 127) 
 			or (k >= 160 and k < 256) 
 			or (k == 9)) then
+			macrorecord(k)
 			editor.lastresult = e.insch(buf, k)
 		else
 			editor.msg(kname .. " not bound")
