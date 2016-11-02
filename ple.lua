@@ -1286,20 +1286,26 @@ editor.edit_actions = { -- actions binding for text edition
 	[0] = e.mark,		-- ^@
 	[1] = e.gohome,		-- ^A
 	[2] = e.goleft,		-- ^B
+	--[3]		-- ^C
 	[4] = e.del,		-- ^D
 	[5] = e.goend,		-- ^E
 	[6] = e.goright,	-- ^F
 	[7] = e.cancel,		-- ^G (do nothing, cancel selection)
 	[8] = e.bksp,		-- ^H
+	--[9] (TAB)
+	--[10]		-- ^J
 	[11] = e.kill,		-- ^k
 	[12] = e.redisplay,	-- ^L
 	[13] = e.nl,		-- ^M (insert newline)
 	[14] = e.godown,	-- ^N
+	--[15]		-- ^O
 	[16] = e.goup,		-- ^P
 	[17] = e.quiteditor,	-- ^Q
 	[18] = e.searchagain,	-- ^R
 	[19] = e.search,	-- ^S
 	[20] = e.test,		-- ^T
+	--[21]		-- ^U
+	--[22]		-- ^V
 	[23] = e.wipe,		-- ^W
 	-- [24]			-- ^X (prefix - see below)
 	[25] = e.yank,		-- ^Y
@@ -1355,7 +1361,7 @@ function editor_loop(ll, fname)
 		local act = buf.actions[k]
 		if type(act) == "table" then -- k is a prefix
 			local k2 = editor.nextk()
-			kname = kname .. "-" .. term.keyname(k)
+			kname = kname .. "-" .. term.keyname(k2)
 			act = act[k2]
 		end
 		if act then 
