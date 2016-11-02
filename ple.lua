@@ -677,19 +677,20 @@ function buffer.new(ll)
 	-- create and initialize a new buffer object
 	-- ll is a list of lines
 	local b = { 
-	  ll=ll,        -- list of text lines
-	  ci=1, cj=0,   -- text cursor (line ci, offset cj)
-	  li=1,         -- index in ll of the line at the top of the box
-	  hs=0,         -- horizontal scroll (number of columns)
-	  chgd=true,    -- true if buffer has changed since last display
+	  ll=ll,	-- list of text lines
+	  ci=1, cj=0,	-- text cursor (line ci, offset cj)
+	  li=1,		-- index in ll of the line at the top of the box
+	  hs=0,		-- horizontal scroll (number of columns)
+	  chgd=true,	-- true if buffer has changed since last display
 	  unsaved=false,-- true if buffer content has changed since last save
-	  ual = {},     -- undo action list
-	  ualtop = 0    -- current top of the undo list (~= #ual !! see undo)
+	  ual = {},	-- undo action list
+	  ualtop = 0,	-- current top of the undo list (~= #ual !! see undo)
 	  -- box: a rectangular region of the screen where the buffer 
 	  --      is displayed (see boxnew() above)
 	  --      the box is assigned to the buffer by a layout function.
 	  --      for the moment, the layout is performed by the 
 	  --      fullredisplay() function.
+	  bindings = {},	-- action table for this buffer (used by modes)
 	}
 	setmetatable(b, buffer)
 	return b
@@ -1147,7 +1148,6 @@ function e.newbuffer(ll, fname)
 	ll = ll or { "" } -- default is a buffer with one empty line
 	local bx = buffer.new(ll) 
 	bx.actions = editor.edit_actions 
-	bx.filename = fname
 	-- insert just after the current buffer
 	local bi = editor.bufindex + 1 
 	table.insert(editor.buflist, bi, bx) 
@@ -1282,7 +1282,7 @@ Misc.
 ------------------------------------------------------------------------
 -- bindings
 
-editor.edit_actions = { -- actions binding for text edition
+editor.bindings = { -- actions binding for text edition
 	[0] = e.mark,		-- ^@
 	[1] = e.gohome,		-- ^A
 	[2] = e.goleft,		-- ^B
@@ -1348,7 +1348,22 @@ editor.edit_actions = { -- actions binding for text edition
 		[107] = e.killeol,	-- esc k
 		[122] = e.redo,		-- esc z
 	},
-}--edit_actions
+}--actions
+
+local function get_action(bindings, k, k2)
+	-- find action bound to k in bindings table. 
+	-- if k is a prefix, use k2 or read it if not provided.
+	-- return action, k2, keyname if found, 
+	-- or nil, k2, keyname if not found
+	local kname = term.keyname(k)
+	local act = bindings[k] 
+	if act and type(act) == "table" then -- k is a prefix
+		k2 = k2 or editor.nextk()
+		kname = kname .. "-" .. term.keyname(k2)
+		act = act[k2]
+	end
+	return act, k2, kname
+end--get_action	
 
 function editor_loop(ll, fname)
 	style.normal()
@@ -1357,12 +1372,10 @@ function editor_loop(ll, fname)
 	redisplay(buf) -- adjust cursor to beginning of buffer
 	while not editor.quit do
 		local k = editor.nextk()
-		local kname = term.keyname(k)
-		local act = buf.actions[k]
-		if type(act) == "table" then -- k is a prefix
-			local k2 = editor.nextk()
-			kname = kname .. "-" .. term.keyname(k2)
-			act = act[k2]
+		-- try first in buffer action table
+		local act, k2, kname = get_action(buf.bindings, k)
+		if not act then -- try in the default editor table
+			act, k2, kname = get_action(editor.bindings, k, k2)
 		end
 		if act then 
 			msg(kname)
