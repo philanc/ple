@@ -956,18 +956,6 @@ function e.insch(b, k)
 	b:bufins(char(k))
 end
 
-function e.ctrlx(b)
-	local k = editor.nextk()
-	local bname = '^X-' .. term.keyname(k)
-	msg(bname)
-	local act = editor.ctrlx_actions[k]
-	if act then 
-		return act(b) 
-	else
-		msg(bname .. " not bound")
-	end
-end--actrlx
-
 function e.searchagain(b, actfn)
 	-- search editor.pat. If found, execute actfn
 	-- default action is to display a message "found!")
@@ -1154,18 +1142,6 @@ function e.exiteditor()
 	msg("exiting.")
 end
 
-function e.esc(b)
-	local k = editor.nextk()
-	local bname = 'ESC-' .. term.keyname(k)
-	msg(bname)
-	local act = editor.esc_actions[k]
-	if act then 
-		return act(b) 
-	else
-		msg(bname .. " not bound")
-	end
-end--aesc
-
 function e.newbuffer(ll, fname)
 	fname = fname or "" -- default is no filename
 	ll = ll or { "" } -- default is a buffer with one empty line
@@ -1238,6 +1214,9 @@ function e.help()
 end--help
 
 function e.test(b)
+	-- this function is just used for quick debug tests
+	-- (to be removed!)
+	--
 --~ 	-- test readstr
 --~ 	s = readstr("enter a string: ")
 --~ 	if not s then msg"NIL!" ; return end
@@ -1310,7 +1289,7 @@ editor.edit_actions = { -- actions binding for text edition
 	[4] = e.del,		-- ^D
 	[5] = e.goend,		-- ^E
 	[6] = e.goright,	-- ^F
-	[7] = e.cancel,		-- ^G (do nothing)
+	[7] = e.cancel,		-- ^G (do nothing, cancel selection)
 	[8] = e.bksp,		-- ^H
 	[11] = e.kill,		-- ^k
 	[12] = e.redisplay,	-- ^L
@@ -1322,10 +1301,10 @@ editor.edit_actions = { -- actions binding for text edition
 	[19] = e.search,	-- ^S
 	[20] = e.test,		-- ^T
 	[23] = e.wipe,		-- ^W
-	[24] = e.ctrlx,		-- ^X
+	-- [24]			-- ^X (prefix - see below)
 	[25] = e.yank,		-- ^Y
 	[26] = e.undo,		-- ^Z
-	[27] = e.esc,		-- ESC
+	-- [27] 		-- ESC (prefix - see below)
 	--
 	[keys.kpgup]  = e.pgup,
 	[keys.kpgdn]  = e.pgdn,
@@ -1338,32 +1317,32 @@ editor.edit_actions = { -- actions binding for text edition
 	[keys.kup]    = e.goup,
 	[keys.kdown]  = e.godown,
 	[keys.kf1]    = e.help,
-
+	--
+	-- prefix keys
+	--
+	[24] = {	-- ^X
+		[2] = e.newbuffer,	-- ^X^B
+		[3] = e.exiteditor,	-- ^X^C
+		[6] = e.findfile,	-- ^X^F
+		[7] = e.cancel,		-- ^X^G (cancel selection)
+		[8] = e.help,		-- ^X^H
+		[14] = e.nextbuffer,	-- ^X^N
+		[16] = e.prevbuffer,	-- ^X^P
+		[19] = e.savefile,	-- ^X^S
+		[23] = e.writefile,	-- ^X^W
+		[24] = e.exch_mark,	-- ^X^X
+	},
+	[27] = {	-- ESC
+		[7] = e.nop,		-- esc^G (cancel selection)
+		[49] = e.help,		-- esc 1
+		[53] = e.replace,	-- esc 5 -%
+		[55] = e.replaceagain,	-- esc 7 -&
+		[60] = e.gobot,		-- esc <
+		[62] = e.goeot,		-- esc >
+		[107] = e.killeol,	-- esc k
+		[122] = e.redo,		-- esc z
+	},
 }--edit_actions
-
-editor.ctrlx_actions = {
-	[2] = e.newbuffer,	-- ^X^B
-	[3] = e.exiteditor,	-- ^X^C
-	[6] = e.findfile,	-- ^X^F
-	[7] = e.nop,		-- ^X^G (do nothing - cancel ^X prefix)
-	[8] = e.help,		-- ^X^H
-	[14] = e.nextbuffer,	-- ^X^N
-	[16] = e.prevbuffer,	-- ^X^P
-	[19] = e.savefile,	-- ^X^S
-	[23] = e.writefile,	-- ^X^W
-	[24] = e.exch_mark,	-- ^X^X
-}--ctrlx_actions
-
-editor.esc_actions = {
-	[7] = e.nop,		-- esc^G (do nothing - cancel ESC prefix)
-	[49] = e.help,		-- esc 1
-	[53] = e.replace,	-- esc 5 -%
-	[55] = e.replaceagain,	-- esc 7 -&
-	[60] = e.gobot,		-- esc <
-	[62] = e.goeot,		-- esc >
-	[107] = e.killeol,	-- esc k
-	[122] = e.redo,		-- esc z
-}--esc_actions
 
 function editor_loop(ll, fname)
 	style.normal()
@@ -1372,21 +1351,26 @@ function editor_loop(ll, fname)
 	redisplay(buf) -- adjust cursor to beginning of buffer
 	while not editor.quit do
 		local k = editor.nextk()
---~ 		if k == 17 then break end -- ^Q quits
-		editor.msg(term.keyname(k))
+		local kname = term.keyname(k)
 		local act = buf.actions[k]
+		if type(act) == "table" then -- k is a prefix
+			local k2 = editor.nextk()
+			kname = kname .. "-" .. term.keyname(k)
+			act = act[k2]
+		end
 		if act then 
+			msg(kname)
 			editor.lastresult = act(buf)
-		elseif (k >= 32 and k < 127) 
+		elseif (not k2) and ((k >= 32 and k < 127) 
 			or (k >= 160 and k < 256) 
-			or (k == 9) then
+			or (k == 9)) then
 			editor.lastresult = e.insch(buf, k)
 		else
-			editor.msg(term.keyname(k) .. " not bound")
+			editor.msg(kname .. " not bound")
 		end
 	redisplay(buf)
 	end--while true
-end
+end--editor_loop
 
 function main()
 	-- process argument
