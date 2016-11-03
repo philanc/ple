@@ -1383,7 +1383,7 @@ editor.bindings = { -- actions binding for text edition
 		[101] = e.macroplay,	-- ^Xe
 	},
 	[27] = {	-- ESC
-		[7] = e.nop,		-- esc ^G (cancel selection)
+		[7] = e.cancel,		-- esc ^G (cancel selection)
 		[49] = e.help,		-- esc 1
 		[53] = e.replace,	-- esc 5 -%
 		[55] = e.replaceagain,	-- esc 7 -&
@@ -1395,7 +1395,7 @@ editor.bindings = { -- actions binding for text edition
 }--actions
 
 local function get_action(bindings, k, k2)
-	-- find action bound to k in bindings table. 
+	-- find action bound to k in bindings table.
 	-- if k is a prefix, use k2 or read it if not provided.
 	-- return action, k2, keyname if found, 
 	-- or nil, k2, keyname if not found
