@@ -1312,7 +1312,7 @@ Misc.
 	esc-z		redo 
 	^X(		record macro
 	^X)		stop recording macro
-	^Xe, ^play macro
+	^Xe, ^]		play macro
 	^L		redisplay the screen (useful if the screen was 
 			garbled	or its dimensions changed)
 	F1, ^X^H	this help text
@@ -1383,7 +1383,7 @@ editor.bindings = { -- actions binding for text edition
 		[101] = e.macroplay,	-- ^Xe
 	},
 	[27] = {	-- ESC
-		[7] = e.nop,		-- esc^G (cancel selection)
+		[7] = e.nop,		-- esc ^G (cancel selection)
 		[49] = e.help,		-- esc 1
 		[53] = e.replace,	-- esc 5 -%
 		[55] = e.replaceagain,	-- esc 7 -&

@@ -39,9 +39,10 @@ On the other hand, the editor already support:
 - crude undo/redo functions
 - multiple buffers (but just one window at a time for the moment)
 - read, write, save files.
+- simple macro recording and playing (a la emacs)
 - a minimal help command (F1 or ^X^H - give a short description of the basic bindings)
 
-At the moment, the complete editor is 37KB. It has been tested on xterm, rxvt and the Linux console. 
+At the moment, the complete editor is 39KB. It has been tested on xterm, rxvt and the Linux console. 
 
 As they say, *it works on my PC...*
 
@@ -49,6 +50,7 @@ As they say, *it works on my PC...*
 ### Default key bindings
 
 ```
+
 
 Cursor movement
 	Arrows, PageUp, PageDown, Home, End
@@ -85,6 +87,9 @@ Misc.
 	^G		abort the current command
 	^Z		undo 
 	esc-z		redo 
+	^X(		record macro
+	^X)		stop recording macro
+	^Xe, ^]		play macro
 	^L		redisplay the screen (useful if the screen was 
 			garbled	or its dimensions changed)
 	F1, ^X^H	this help text
