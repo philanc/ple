@@ -1214,16 +1214,16 @@ local function macrorecord(x)
 	table.insert(editor.macroseq, x)
 end
 
-function e.macrostartrec(buf)
+function e.macrostartrec(b)
 	editor.macroseq = {}
 	editor.macrorec = true
 end
 
-function e.macrostoprec(buf)
+function e.macrostoprec(b)
 	editor.macrorec = false
 end
 
-function e.macroplay() 
+function e.macroplay(b) 
 	-- should not pass buf to use the current buffer 
 	-- for macros switching buffers)
 	if #editor.macroseq == 0 then
@@ -1242,6 +1242,18 @@ function e.macroplay()
 	end
 end
 
+function e.gotoline(b, lineno)
+	-- prompt for a line number, go there
+	-- if lineno is provided, don't prompt.
+	if not lineno then
+		lineno = tonumber(editor.readstr("line number: "))
+	end
+	if not lineno then
+		msg("invalid line number.")
+	else
+		return b:setcur(lineno, 0)
+	end
+end--gotoline
 
 function e.help()
 	for i, bx in ipairs(editor.buflist) do
@@ -1290,6 +1302,7 @@ Cursor movement
 	esc-> 		go to end of buffer
 	^S		forward search (plain text, case sensitive)
 	^R		search again (string previously entered with ^S)
+	esc-g		prompt for a line number, go there
    
 Edition
 	^D, Delete	delete character at cursor
@@ -1395,6 +1408,7 @@ editor.bindings = { -- actions binding for text edition
 		[55] = e.replaceagain,	-- esc 7 -&
 		[60] = e.gobot,		-- esc <
 		[62] = e.goeot,		-- esc >
+		[103] = e.gotoline,	-- esc g
 		[107] = e.killeol,	-- esc k
 		[122] = e.redo,		-- esc z
 	},
