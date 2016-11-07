@@ -1,13 +1,10 @@
 -- Copyright (c) 2016  Phil Leblanc  -- see LICENSE file
 
 ------------------------------------------------------------------------
---[[  ple - a Pure Lua Editor  		!!! WORK IN PROGRESS !!!
+--[[  ple - a Pure Lua Editor
 
 
-
-License: MIT
-
-https://github.com/philanc/ple
+(see https://github.com/philanc/ple  -  License: MIT)
 
 ]]
 
@@ -28,12 +25,21 @@ end
 
 local function readfile(fn)
 	-- read file with filename 'fn' as a list of lines
-	fh, errm = io.open(fn)
+	local fh, errm = io.open(fn)
 	if not fh then return nil, errm end
 	local ll = {}
 	for l in fh:lines() do table.insert(ll, l) end
 	fh:close()
 	return ll
+end
+
+local function fileexists(fn)
+	-- check if file 'fn' exists and can be read. return true or nil
+	if not fn then return nil end
+	local fh = io.open(fn)
+	if not fh then return nil end	
+	fh:close()
+	return true
 end
 
 ------------------------------------------------------------------------
@@ -373,7 +379,7 @@ local NDC = char(183) -- middledot, used for non-displayable latin1 chars
 local EOT = '~'  -- used to indicate that we are past the end of text
 
 -- editor is the global editor object
-local editor = {
+editor = {
 	quit = false, -- set to true to quit editor_loop()
 	nextk = term.input(), -- the "read next key" function
 	buflist = {},  -- list of buffers
@@ -1183,7 +1189,7 @@ function e.findfile()
 	local ll, errmsg = readfile(fn)
 	if not ll then editor.msg(errmsg); return end
 	e.newbuffer(ll)
-	b.filename = fn
+	buf.filename = fn
 --~ 	editor.fullredisplay()
 end--findfile
 
@@ -1409,10 +1415,25 @@ local function get_action(bindings, k, k2)
 	return act, k2, kname
 end--get_action	
 
-function editor_loop(ll, fname)
+local function editor_loadinitfile()
+	-- function to be executed before entering the editor loop
+	-- could be used to load a configuration/initialization file
+	local initfile = os.getenv("PLE_INIT")
+	if fileexists(initfile) then return loadfile(initfile)() end
+	initfile = "./ple_init.lua"
+	if fileexists(initfile) then return loadfile(initfile)() end
+	initfile = "~/config/ple/ple_init.lua"
+	if fileexists(initfile) then return loadfile(initfile)() end
+	return nil
+end--editor_loadinitfile
+
+
+local function editor_loop(ll, fname)
+	editor.initmsg = "Help: F1 or ^X^H or esc-1"
+	local r = editor_loadinitfile()
 	style.normal()
 	e.newbuffer(ll, fname); 
-	msg("Help: F1 or ^X^H or esc-1")
+	msg(editor.initmsg)
 	redisplay(buf) -- adjust cursor to beginning of buffer
 	while not editor.quit do
 		local k = editor.nextk()
@@ -1437,7 +1458,7 @@ function editor_loop(ll, fname)
 	end--while true
 end--editor_loop
 
-function main()
+local function main()
 	-- process argument
 	local ll, fname 
 	if arg[1] then
