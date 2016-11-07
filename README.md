@@ -43,8 +43,10 @@ On the other hand, the editor already support:
 - a minimal help command (F1 or ^X^H - give a short description of the basic bindings)
 
 Configuration -- the editor can be configured / customized with a 
-Lua file loaded at initialization. The configuration file is 
-looked for in sequence at the following locations:
+Lua file loaded at initialization. The Lua configuration file is loaded 
+with the Lua function `loadfile`. It is executed in the environment of the editor. The `editor` global object is visible and can be used by the configuration script.
+
+The configuration file is looked for in sequence at the following locations:
 - the file which pathname is in the environment variable PLE_INIT
 - ./ple_init.lua
 - ~/config/ple/ple_init.lua
