@@ -1444,11 +1444,17 @@ local function editor_loadinitfile()
 	-- function to be executed before entering the editor loop
 	-- could be used to load a configuration/initialization file
 	local initfile = os.getenv("PLE_INIT")
-	if fileexists(initfile) then return loadfile(initfile)() end
+	if fileexists(initfile) then 
+		return assert(loadfile(initfile))()
+	end
 	initfile = "./ple_init.lua"
-	if fileexists(initfile) then return loadfile(initfile)() end
+	if fileexists(initfile) then
+		return assert(loadfile(initfile))()
+	end
 	initfile = "~/config/ple/ple_init.lua"
-	if fileexists(initfile) then return loadfile(initfile)() end
+	if fileexists(initfile) then
+		return assert(loadfile(initfile))()
+	end
 	return nil
 end--editor_loadinitfile
 
