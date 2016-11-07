@@ -42,7 +42,15 @@ On the other hand, the editor already support:
 - simple macro recording and playing (a la emacs)
 - a minimal help command (F1 or ^X^H - give a short description of the basic bindings)
 
-At the moment, the complete editor is 39KB. It has been tested on xterm, rxvt and the Linux console. 
+Configuration -- the editor can be configured / customized with a 
+Lua file loaded at initialization. The configuration file is 
+looked for in sequence at the following locations:
+	- the file which pathname is in the environment variable PLE_INIT
+	- ./ple_init.lua
+	- ~/config/ple/ple_init.lua
+The first file found, if any, is loaded. 
+
+At the moment, the complete editor is 40KB. It has been tested on xterm, rxvt and the Linux console. 
 
 As they say, *it works on my PC...*
 
@@ -61,7 +69,8 @@ Cursor movement
 	esc-> 		go to end of buffer
 	^S		forward search (plain text, case sensitive)
 	^R		search again (string previously entered with ^S)
-   
+ 	esc-g		prompt for a line number, go there
+  
 Edition
 	^D, Delete	delete character at cursor
 	^H, bcksp	delete previous character

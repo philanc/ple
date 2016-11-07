@@ -3,6 +3,17 @@
 ------------------------------------------------------------------------
 --[[  ple - a Pure Lua Editor
 
+editor actions:	see table editor.action
+key bindings:	see table editor.bindings
+
+configuration:
+the editor can be configured / customized with a Lua file loaded at
+initialization. The configuration file is looked for in sequence at the 
+following locations:
+	- the file which pathname is in the environment variable PLE_INIT
+	- ./ple_init.lua
+	- ~/config/ple/ple_init.lua
+The first file found, if any, is loaded. 
 
 (see https://github.com/philanc/ple  -  License: MIT)
 
