@@ -69,46 +69,46 @@ As they say, *it works on my PC...*
 
 Cursor movement
 	Arrows, PageUp, PageDown, Home, End
-	^A ^E		go to beginning, end of line
-	^B ^F		go backward, forward
-	^N ^P		go to next line, previous line
-	esc-<		go to beginning of buffer
-	esc-> 		go to end of buffer
-	^S		forward search (plain text, case sensitive)
-	^R		search again (string previously entered with ^S)
- 	esc-g		prompt for a line number, go there
+	^A ^E           go to beginning, end of line
+	^B ^F           go backward, forward
+	^N ^P           go to next line, previous line
+	esc-<           go to beginning of buffer
+	esc->           go to end of buffer
+	^S              forward search (plain text, case sensitive)
+	^R              search again (string previously entered with ^S)
+ 	esc-g           prompt for a line number, go there
   
 Edition
-	^D, Delete	delete character at cursor
-	^H, bcksp	delete previous character
-	^K		cut from cursor to end of line
-	esc-k		cut from cursor to beginning of next line
-			(if repeated, lines are appended to the paste buffer)
-	^space, ^@	mark  (set beginning of selection)
-	^W		wipe (cut selection)
-	^Y		yank (paste)
-	esc-5		replace
-	esc-7		replace again (with same strings)
+	^D, Delete      delete character at cursor
+	^H, bcksp       delete previous character
+	^K              cut from cursor to end of line
+	esc-k           cut from cursor to beginning of next line
+	                (if repeated, lines are appended to the paste buffer)
+	^space, ^@      mark  (set beginning of selection)
+	^W              wipe (cut selection)
+	^Y              yank (paste)
+	esc-5           replace
+	esc-7           replace again (with same strings)
 
 Files, buffers
-	^X^F		prompt for a filename, read the file in a new buffer
-	^X^W		prompt for a filename, write the current buffer
-	^X^S		save the current buffer
-	^X^B		create a new, empty buffer
-	^X^N		switch to the next buffer
-	^X^P		switch to the previous buffer
+	^X^F            prompt for a filename, read the file in a new buffer
+	^X^W            prompt for a filename, write the current buffer
+	^X^S            save the current buffer
+	^X^B            create a new, empty buffer
+	^X^N            switch to the next buffer
+	^X^P            switch to the previous buffer
 
 Misc.
-	^X^C		exit the editor
-	^G		abort the current command
-	^Z		undo 
-	esc-z		redo 
-	^X(		record macro
-	^X)		stop recording macro
-	^Xe, ^]		play macro
-	^L		redisplay the screen (useful if the screen was 
+	^X^C            exit the editor
+	^G              abort the current command
+	^Z              undo 
+	esc-z           redo 
+	^X(             record macro
+	^X)             stop recording macro
+	^Xe, ^]         play macro
+	^L              redisplay the screen (useful if the screen was 
 			garbled	or its dimensions changed)
-	F1, ^X^H	this help text
+	F1, ^X^H        this help text
 
 ]]
 ```
