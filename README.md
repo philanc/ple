@@ -47,10 +47,15 @@ Lua file loaded at initialization. The Lua configuration file is loaded
 with the Lua function `loadfile`. It is executed in the environment of the editor. The `editor` global object is visible and can be used by the configuration script.
 
 The configuration file is looked for in sequence at the following locations:
-- the file which pathname is in the environment variable PLE_INIT
-- ./ple_init.lua
-- ~/config/ple/ple_init.lua
+- the file which pathname is in the environment variable `PLE_INIT`
+- `./ple_init.lua`
+- `~/config/ple/ple_init.lua`
+
 The first file found, if any, is loaded. 
+
+A sample `ple_init.lua` file is provided. It defines an editor command to execute the current line as a shell command and insert the result in the current buffer at the cursor.
+
+--
 
 At the moment, the complete editor is 40KB. It has been tested on xterm, rxvt and the Linux console. 
 
