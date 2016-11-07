@@ -45,9 +45,9 @@ On the other hand, the editor already support:
 Configuration -- the editor can be configured / customized with a 
 Lua file loaded at initialization. The configuration file is 
 looked for in sequence at the following locations:
-	- the file which pathname is in the environment variable PLE_INIT
-	- ./ple_init.lua
-	- ~/config/ple/ple_init.lua
+- the file which pathname is in the environment variable PLE_INIT
+- ./ple_init.lua
+- ~/config/ple/ple_init.lua
 The first file found, if any, is loaded. 
 
 At the moment, the complete editor is 40KB. It has been tested on xterm, rxvt and the Linux console. 
