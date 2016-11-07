@@ -107,7 +107,7 @@ Misc.
 	^X)             stop recording macro
 	^Xe, ^]         play macro
 	^L              redisplay the screen (useful if the screen was 
-			garbled or its dimensions changed)
+                        garbled or its dimensions changed)
 	F1, ^X^H        this help text
 
 ]]
