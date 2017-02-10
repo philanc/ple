@@ -1168,6 +1168,7 @@ function e.newbuffer(ll, fname)
 	ll = ll or { "" } -- default is a buffer with one empty line
 	local bx = buffer.new(ll) 
 	bx.actions = editor.edit_actions 
+	bx.filename = fname
 	-- insert just after the current buffer
 	local bi = editor.bufindex + 1 
 	table.insert(editor.buflist, bi, bx) 
@@ -1199,9 +1200,7 @@ function e.findfile()
 	if not fn then editor.msg""; return end
 	local ll, errmsg = readfile(fn)
 	if not ll then editor.msg(errmsg); return end
-	e.newbuffer(ll)
-	buf.filename = fn
---~ 	editor.fullredisplay()
+	e.newbuffer(ll, fn)
 end--findfile
 
 function e.writefile(b, fname)
@@ -1217,7 +1216,7 @@ function e.writefile(b, fname)
 end--writefile
 
 function e.savefile(b)
-	e.writefile(b.filename)
+	e.writefile(b, b.filename)
 end--savefile
 
 local function macrorecord(x)
@@ -1516,7 +1515,7 @@ local function main()
 		print(msg)
 		os.exit(1)
 	end
---~ 	pp(editor.kll)
+	print("\n") -- add an extra line  after the 'exiting' msg
 end
 
 main()
