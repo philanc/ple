@@ -1195,12 +1195,12 @@ function e.prevbuffer()
 	editor.fullredisplay()
 end--nextbuffer
 
-function e.findfile()
-	local fn = editor.readstr("Open file: ")
-	if not fn then editor.msg""; return end
-	local ll, errmsg = readfile(fn)
+function e.findfile(b, fname)
+	fname = fname or editor.readstr("Open file: ")
+	if not fname then editor.msg""; return end
+	local ll, errmsg = readfile(fname)
 	if not ll then editor.msg(errmsg); return end
-	e.newbuffer(ll, fn)
+	e.newbuffer(ll, fname)
 end--findfile
 
 function e.writefile(b, fname)
