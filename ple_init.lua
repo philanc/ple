@@ -41,9 +41,17 @@ function e.newline_shell(b)
 	e.nl(b)
 end	
 	
--- now, bind 'newline_shell' to ESC-Return (esc-^M)
+-- bind 'newline_shell' to ESC-Return (esc-^M)
 editor.bindings[27][13] = e.newline_shell
 
+function e.edit_file_at_cursor(b)
+	local line, j = b:getline()
+	-- (FIXME) assume the line contains only the filename
+	local fname = line
+	e.findfile(b, fname)
+end
+-- bind function
+editor.bindings[27][101] = e.edit_file_at_cursor -- ESC-e
 
 -- append some text to the initial message displayed when entering
 -- the editor
