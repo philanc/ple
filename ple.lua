@@ -56,21 +56,75 @@ end
 ------------------------------------------------------------------------
 -- TERM MODULE
 
---[[
+--[[  
 
-terminal utility module - unix only
+--
+This is commit 73d0edf (2018-11-23) of module plterm
+https://github.com/philanc/plterm/commit/73d0edf42512a37b78f9b9cbe4f52d3788c90f3d
+--
 
-(also available as a distinct module. see https://github.com/philanc/plterm )
+plterm - Pure Lua ANSI Terminal functions - unix only
 
 This module assumes the tty is in raw mode. 
 It provides functions based on stty (so available on unix) 
 to save, set and restore tty modes.
+
+Module functions:
+
+clear()     -- clear screen
+cleareol()  -- clear to end of line
+golc(l, c)  -- move the cursor to line l, column c
+up(n)
+down(n)
+right(n)
+left(n)     -- move the cursor by n positions (default to 1)
+color(f, b, m)  
+            -- change the color used to write characters
+		(foreground color, background color, modifier)
+		see term.colors
+hide()
+show()      -- hide or show the cursor
+save()
+restore()   -- save and restore the position of the cursor
+reset()     -- reset the terminal (colors, cursor position)
+
+input()     -- input iterator (coroutine-based)
+		return a "next key" function that can be iteratively called 
+		to read a key (escape sequences returned by function keys 
+		are parsed)
+rawinput()  -- same, but escape sequences are not parsed.
+getcurpos() -- return the current position of the cursor
+getscrlc()  -- return the dimensions of the screen 
+               (number of lines and columns)
+keyname()   -- return a printable name for any key
+		- key names in term.keys for function keys,
+		- control characters are represented as "^A"
+		- the character itself for other keys
+
+tty mode management functions
+
+setrawmode()       -- set the terminal in raw mode
+setsanemode()      -- set the terminal in a default "sane mode"
+savemode()         -- get the current mode as a string
+restoremode(mode)  -- restore a mode saved by savemode()
+
+License: BSD
+https://github.com/philanc/plterm
 
 -- just in case, a good ref on ANSI esc sequences:   
 https://en.wikipedia.org/wiki/ANSI_escape_code
 (in the text, "CSI" is "<esc>[")
 
 ]]
+
+-- some local definitions
+
+local strf = string.format
+local byte, char, rep = string.byte, string.char, string.rep
+local app, concat = table.insert, table.concat
+local yield = coroutine.yield
+
+local repr = function(x) return strf("%q", tostring(x)) end
 
 
 ------------------------------------------------------------------------
@@ -91,17 +145,19 @@ end
 -- following definitions (from term.clear to term.restore) are
 -- based on public domain code by Luiz Henrique de Figueiredo 
 -- http://lua-users.org/lists/lua-l/2009-12/msg00942.html
-term={
+
+local term={ -- the plterm module
+
 	out = out,
 	outf = outf,
 	outdbg = outdbg,
 	clear = function() out("\027[2J") end,
 	cleareol = function() out("\027[K") end,
 	golc = function(l,c) out("\027[",l,";",c,"H") end,
-	up = function(n) out("\027[",n or 1,";","A") end,
-	down = function(n) out("\027[",n or 1,";","B") end,
-	right = function(n) out("\027[",n or 1,";","C") end,
-	left = function(n) out("\027[",n or 1,";","D") end,
+	up = function(n) out("\027[",n or 1,"A") end,
+	down = function(n) out("\027[",n or 1,"B") end,
+	right = function(n) out("\027[",n or 1,"C") end,
+	left = function(n) out("\027[",n or 1,"D") end,
 	color = function(f,b,m) 
 	    if m then out("\027[",f,";",b,";",m,"m")
 	    elseif b then out("\027[",f,";",b,"m")
@@ -211,6 +267,9 @@ local seq = {
 	['[[D'] = keys.kf4,  --linux
 	['[[E'] = keys.kf5,  --linux
 
+	['OH'] = keys.khome, --vte
+	['OF'] = keys.kend,  --vte
+	
 }
 
 local getcode = function() return byte(io.read(1)) end
@@ -241,8 +300,7 @@ term.input = function()
 			end
 			c2 = getcode()
 			s = char(c1, c2)
-			if c2 == LBR then 
-				-- esc[[x sequences (F1-F5 in linux console)
+			if c2 == LBR then -- esc[[x sequences (F1-F5 in linux console)
 				s = s .. char(getcode())
 			end
 			if seq[s] then 
@@ -261,15 +319,13 @@ term.input = function()
 						yield(seq[s])
 						goto continue
 					else
-						-- valid but unknown sequence 
-						-- ignore it
+						-- valid but unknown sequence - ignore it
 						yield(keys.unknown)
 						goto continue
 					end
 				end
 				if not isdigitsc(ci) then
-					-- not a valid seq
-					-- return all the chars
+					-- not a valid seq. return all the chars
 					yield(ESC)
 					for i = 1, #s do yield(byte(s, i)) end
 					goto continue
@@ -296,7 +352,7 @@ term.rawinput = function()
 end--rawinput()
 
 term.getcurpos = function()
-	-- return current cursor position (line, coloumn as integers)
+	-- return current cursor position (line, column as integers)
 	--
 	outf("\027[6n") -- report cursor position. answer: esc[n;mR
 	local c, i = 0, 0
@@ -355,7 +411,6 @@ end
 term.savemode = function()
 	local fh = io.popen(stty .. " -g")
 	local mode = fh:read('a')
-	print(mode)
 	local succ, e, msg = fh:close()
 	return succ and mode or nil, e, msg
 end
@@ -364,7 +419,8 @@ term.restoremode = function(mode)
 	return os.execute(stty .. " " .. mode)
 end
 
--- return term -- END OF TERM MODULE
+-- return term 
+-- END OF TERM MODULE
 
 
 ------------------------------------------------------------------------
