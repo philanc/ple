@@ -27,12 +27,16 @@ function e.newline_shell(b)
 	-- make sure we also get stderr...
 	cmd = cmd .. " 2>&1 "
 	-- execute the shell command
-	local fh = io.popen(cmd)
+	local fh, err = io.popen(cmd)
+	if not fh then
+		editor.msg("newline_shell error: " .. err)
+		return
+	end
 	local ll = {} -- read lines into ll
 	for l in fh:lines() do
 		table.insert(ll, l)
 	end
-	fh.close()
+	fh:close()
 	-- insert a newline at the cursor
 	e.nl(b)
 	-- insert the list of lines at the cursor (if the list is not empty)

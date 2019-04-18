@@ -12,7 +12,7 @@ initialization. The configuration file is looked for in sequence at the
 following locations:
 	- the file which pathname is in the environment variable PLE_INIT
 	- ./ple_init.lua
-	- ~/config/ple/ple_init.lua
+	- ~/.config/ple/ple_init.lua
 The first file found, if any, is loaded. 
 
 (see https://github.com/philanc/ple  -  License: MIT)
@@ -1506,7 +1506,8 @@ local function editor_loadinitfile()
 	if fileexists(initfile) then
 		return assert(loadfile(initfile))()
 	end
-	initfile = "~/config/ple/ple_init.lua"
+	local homedir = os.getenv("HOME") or "~"
+	initfile = homedir .. "/.config/ple/ple_init.lua"
 	if fileexists(initfile) then
 		return assert(loadfile(initfile))()
 	end
