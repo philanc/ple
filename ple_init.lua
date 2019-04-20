@@ -44,10 +44,13 @@ function e.newline_shell(b)
 	-- insert another newline
 	e.nl(b)
 end	
+
 	
 -- bind 'newline_shell' to ESC-Return (esc-^M)
 editor.bindings[27][13] = e.newline_shell
 
+
+-- edit file at cursor
 function e.edit_file_at_cursor(b)
 	local line, j = b:getline()
 	-- (FIXME) assume the line contains only the filename
@@ -57,6 +60,7 @@ end
 -- bind function
 editor.bindings[27][101] = e.edit_file_at_cursor -- ESC-e
 
+------------------------------------------------------------------------
 -- append some text to the initial message displayed when entering
 -- the editor
 editor.initmsg = editor.initmsg .. " - Sample ple_init.lua loaded. "

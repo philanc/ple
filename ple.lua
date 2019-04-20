@@ -23,7 +23,6 @@ The first file found, if any, is loaded.
 
 local strf = string.format
 local byte, char, rep = string.byte, string.char, string.rep
-local app, concat = table.insert, table.concat
 local yield = coroutine.yield
 
 local repr = function(x) return strf("%q", tostring(x)) end
@@ -33,6 +32,15 @@ local function min(x, y) if x < y then return x else return y end end
 local function pad(s, w) -- pad a string to fit width w
 	if #s >= w then return s:sub(1,w) else return s .. rep(' ', w-#s) end
 end
+
+local function lines(s)
+	-- split s into a list of lines
+	lt = {}
+	s = s .. "\n"
+	for l in string.gmatch(s, "(.-)\r?\n") do table.insert(lt, l) end
+	return lt
+end	
+	
 
 local function readfile(fn)
 	-- read file with filename 'fn' as a list of lines
@@ -121,7 +129,6 @@ https://en.wikipedia.org/wiki/ANSI_escape_code
 
 local strf = string.format
 local byte, char, rep = string.byte, string.char, string.rep
-local app, concat = table.insert, table.concat
 local yield = coroutine.yield
 
 local repr = function(x) return strf("%q", tostring(x)) end
@@ -749,6 +756,7 @@ buffer = {}; buffer.__index = buffer --buffer class
 
 -- (note: 'b' is a buffer object in all functions below)
 
+	
 function buffer.new(ll)
 	-- create and initialize a new buffer object
 	-- ll is a list of lines
@@ -822,6 +830,9 @@ function buffer.getlines(b, di, dj)
 	return sl
 end--getlines
 
+function buffer.gettext(b)
+	return table.concat(b.ll, '\n')
+end
 
 -- cursor movement
 
@@ -934,6 +945,21 @@ function buffer.bufdel(b, di, dj, no_undo)
 	return true
 end--bufdel
 
+function buffer.settext(b, txt)
+	-- replace the buffer text 
+	-- !! it cannot be undone and it clears the undo stack !!
+	-- the cursor and display are reinitialized at the top 
+	-- of the new text.
+	buffer.undo_clearall(b)
+	b.ll = lines(txt)
+	b.chgd = true
+	b.unsaved = true
+	b.ci = 1 -- line index
+	b.cj = 0 -- cursor offset
+	b.li = 1 -- index of line at the top of the box
+	b.hs = 0 -- horizontal scroll
+	return true
+end--settext
 
 ------------------------------------------------------------------------
 -- undo functions  
@@ -976,6 +1002,11 @@ function buffer.op_redo(b, sl)
 	else
 		return nil, "unknown op"
 	end
+end
+
+function buffer.undo_clearall(b)
+	b.ual = {}
+	b.ualtop = 0	
 end
 
 
@@ -1344,9 +1375,13 @@ function e.test(b)
 --~ 	msg("the string is: '"..s.."'")
 
 	-- test kill
-	b.ll = editor.kll or {}
-	b:setcur(1, 0)
-	b.chgd = true
+--~ 	b.ll = editor.kll or {}
+--~ 	b:setcur(1, 0)
+--~ 	b.chgd = true
+
+	s = b:gettext()
+	s = s:upper()
+	b:settext(s)
 
 --~ 	-- test readchar
 --~ 	local ch = readchar("test readchar: ", "[abc]")
