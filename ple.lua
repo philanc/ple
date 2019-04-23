@@ -855,8 +855,8 @@ function buffer.setcur(b, i, j) -- set cursor absolute
 end
 
 function buffer.addcur(b, di, dj) -- move cursor relative
-	b.ci, b.cj = b.ci + di, b.cj + dj
-	return true
+	local i, j = b.ci + di, b.cj + dj
+	return buffer.setcur(b, i, j)
 end
 
 -- buffer cursor movement 
@@ -1029,12 +1029,12 @@ end
 e.redisplay = editor.fullredisplay
 
 
-function e.gohome() buf:curhome(b) end
-function e.goend() buf:curend(b) end
-function e.goup() buf:curup(b) end
-function e.godown() buf:curdown(b) end
-function e.gobot() buf:curbot(b) end
-function e.goeot() buf:cureot(b) end
+function e.gohome() buf:curhome() end
+function e.goend() buf:curend() end
+function e.goup() buf:curup() end
+function e.godown() buf:curdown() end
+function e.gobot() buf:curbot() end
+function e.goeot() buf:cureot() end
 
 function e.goright()
 	local b = buf
