@@ -1029,34 +1029,61 @@ end
 e.redisplay = editor.fullredisplay
 
 
-function e.gohome() buf:curhome() end
-function e.goend() buf:curend() end
-function e.goup() buf:curup() end
-function e.godown() buf:curdown() end
-function e.gobot() buf:curbot() end
-function e.goeot() buf:cureot() end
-
-function e.goright()
-	local b = buf
-	return b:curright() or b:curdown() and b:curhome()
-end
+function e.gohome() buf:setcurj(0) end
+function e.goend() buf:setcurj() end
+function e.gobot() buf:setcur(1, 0) end
+function e.goeot() buf:setcur() end
 	
-function e.goleft()
-	-- adjust eol (cj may be > eol when moving up/down)
-	local b = buf
-	if b:ateol() then b:curend() end 
-	return b:curleft() or (b:curup() and b:curend())
+function e.goup(n) 
+	n = n or 1
+	buf:setcur(buf.ci - n, buf.cj)
+end
+
+function e.godown(n)
+	n = n or 1
+	buf:setcur(buf.ci + n, buf.cj)
+end
+
+function e.goright(n)
+	n = n or 1
+	local ln = #buf.ll[buf.ci]
+	while n > 0 do
+		buf.cj = buf.cj + 1
+		if buf.cj > ln then -- goto beg of next line
+			buf.ci = buf.ci + 1
+			if buf.ci > #buf.ll then return e.goeot() end
+			ln = #buf.ll[buf.ci]
+			buf.cj = 0
+		end
+		n = n - 1
+	end
+end
+
+function e.goleft(n)
+	n = n or 1
+	while n > 0 do
+		buf.cj = buf.cj - 1
+		if buf.cj < 0 then -- goto end of prev line
+			buf.ci = buf.ci - 1
+			if buf.ci < 1 then return e.gobot() end
+			buf.cj = #buf.ll[buf.ci]
+		end
+		n = n - 1
+	end
 end
 
 function e.pgdn() 
-	local b = buf
-	for i = 1, b.box.l - 2 do b:curdown() end 
+	buf:setcur(buf.ci + buf.box.l - 2, buf.cj)
 end
 
 function e.pgup() 
-	local b = buf
-	for i = 1, b.box.l - 2 do b:curup() end 
+	buf:setcur(buf.ci - buf.box.l - 2, buf.cj)
 end
+
+--~ function e.pgup() 
+--~ 	local b = buf
+--~ 	for i = 1, b.box.l - 2 do b:curup() end 
+--~ end
 
 function e.nl()
 	local b = buf
