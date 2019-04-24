@@ -1,4 +1,4 @@
--- Copyright (c) 2016  Phil Leblanc  -- see LICENSE file
+-- Copyright (c) 2019  Phil Leblanc  -- see LICENSE file
 
 ------------------------------------------------------------------------
 --[[  ple - a Pure Lua Editor
@@ -841,6 +841,7 @@ function buffer.setcurj(b, j) -- set cursor on the current line
 	local ci = b:getcur()
 	local ln = #b.ll[ci]
 	if not j or j > ln then j = ln end
+	if j < 0 then j = 0 end
 	b.cj = j
 	return j
 end
@@ -853,22 +854,6 @@ function buffer.setcur(b, i, j) -- set cursor absolute
 	b.ci, b.cj = i, j
 	return i, j
 end
-
-function buffer.addcur(b, di, dj) -- move cursor relative
-	local i, j = b.ci + di, b.cj + dj
-	return buffer.setcur(b, i, j)
-end
-
--- buffer cursor movement 
--- return true, or nil/false if movement is not possible
-function buffer.curhome(b) b.cj = 0; return true end
-function buffer.curend(b) b:setcur(b.ci); return true end
-function buffer.curright(b) return not b:ateol() and b:addcur(0, 1) end
-function buffer.curleft(b) return not b:atbol() and b:addcur(0, -1) end
-function buffer.curup(b) return not b:atfirst() and b:addcur(-1, 0) end
-function buffer.curdown(b) return not b:atlast() and b:addcur(1, 0) end
-function buffer.curbot(b) return not b:atbot() and b:setcur(1, 0) end
-function buffer.cureot(b) return not b:ateot() and b:setcur() end
 
 -- modification at cursor
 -- all modifications should be performed by the following functions:
@@ -1105,8 +1090,7 @@ function e.bksp()
 end
 
 function e.insch(k)
-	local b = buf
-	b:bufins(char(k))
+	return buf:bufins(char(k))
 end
 
 function e.searchagain(actfn)
@@ -1132,7 +1116,7 @@ function e.searchagain(actfn)
 				return true
 			end
 		end -- found
-		if not (b:curdown() and b:curhome()) then
+		if not (e.goright()) then
 			break -- at end of file and not found yet
 		end
 	end--while
@@ -1159,7 +1143,8 @@ function e.replaceagain()
 		-- (pat and patrepl are plain text, unescaped)
 		n = n + 1  --one more replaced instance
 		local ci, cj = b:getcur()
-		return b:bufdel(ci, cj + #editor.pat) and b:bufins(editor.patrepl)
+		return b:bufdel(ci, cj + #editor.pat) 
+			and b:bufins(editor.patrepl)
 	end--replatcur
 	function replfn()
 		-- this function is called each time editor.pat is found
@@ -1168,7 +1153,8 @@ function e.replaceagain()
 			return replatcur()
 		else
 			local ch = readchar( -- ask what to do
-				"replace? (q)uit (y)es (n)o (a)ll (^G) ", "[anqy]")
+				"replace? (q)uit (y)es (n)o (a)ll (^G) ", 
+				"[anqy]")
 			if not ch then return nil end
 			if ch == "a" then -- replace all
 				replall = true
