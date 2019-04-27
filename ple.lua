@@ -1073,10 +1073,6 @@ function e.pgup()
 	buf:setcur(buf.ci - buf.box.l - 2, buf.cj)
 end
 
-function e.nl()
-	return buf:bufins({"", ""})
-end
-
 function e.del()
 	local b = buf
 	if b:ateot() then return false end
@@ -1090,10 +1086,74 @@ function e.bksp()
 end
 
 function e.insch(k)
+	-- insert char with code k
+	-- (don't remove. used by editor loop and macroplay)
 	return buf:bufins(char(k))
 end
 
+function e.insert(x)
+	-- insert x at cursor
+	-- x can be a string or a list of lines (a table)
+	-- if x is a string, it may contain newlines ('\n')
+	return buf:bufins((type(x) == "string") and lines(x) or x)
+end
+
+function e.nl()
+	-- equivalent to e.insert("\n")
+	return buf:bufins({"", ""})
+end
+
+function e.searchpattern(pat, plain)
+	-- forward search a lua or plain text pattern pat, starting at cursor.
+	-- pattern is searched one line at a time
+	-- if plain is true, pat is a plain text pattern. special
+	-- pattern chars are ignored.
+	-- in a lua pattern, ^ and $ represent the beginning and end of line
+	-- a pattern cannot contain '\n'
+	-- if the pattern is found, cursor is moved at the beginning of
+	-- the pattern and the function return true. else, the cursor
+	-- is not moved and the function returns false.
+	local b = buf
+	local oci, ocj = b:getcur() -- save the original cursor position
+	while true do
+		local l, cj = b:getline()
+		local j = l:find(pat, cj+2, plain)
+		if j then --found
+			b:setcurj(j-1)
+			return true
+		end -- found
+		if b:atlast() then break end
+		e.godown(1)
+	end--while
+	-- not found
+	b:setcur(oci, ocj) -- restore cursor position	
+	return false
+end
+
 function e.searchagain(actfn)
+	-- search editor.pat. If found, execute actfn
+	-- default action is to display a message "found!")
+	-- on success, return the result of actfn() or true.
+	-- (note: search does NOT ignore case)
+	local b = buf
+	if not editor.pat then 
+		msg("no string to search")
+		return nil
+	end
+	local r = e.searchpattern(editor.pat, editor.searchplain)
+	if r then
+		if actfn then 
+			return actfn()
+		else
+			msg("found!")
+			return true
+		end
+	else
+		msg("not found")
+	end
+end
+
+function e.searchagain0(actfn)
 	-- search editor.pat. If found, execute actfn
 	-- default action is to display a message "found!")
 	-- on success, return the result of actfn() or true.
