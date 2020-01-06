@@ -1004,8 +1004,8 @@ local e = editor.actions
 
 local msg, readstr, readchar = editor.msg, editor.readstr, editor.readchar
 
-function e.cancel()
-	local b = buf
+function e.cancel(b)
+
 	-- do nothing. cancel selection if any
 	b.si, b.sj = nil, nil
 	b.chgd = true
@@ -1014,96 +1014,96 @@ end
 e.redisplay = editor.fullredisplay
 
 
-function e.gohome() buf:setcurj(0) end
-function e.goend() buf:setcurj() end
-function e.gobot() buf:setcur(1, 0) end
-function e.goeot() buf:setcur() end
+function e.gohome(b) b:setcurj(0) end
+function e.goend(b) b:setcurj() end
+function e.gobot(b) b:setcur(1, 0) end
+function e.goeot(b) b:setcur() end
 	
-function e.goup(n) 
+function e.goup(b, n) 
 	n = n or 1
-	buf:setcur(buf.ci - n, buf.cj)
+	b:setcur(b.ci - n, b.cj)
 end
 
-function e.godown(n)
+function e.godown(b, n)
 	n = n or 1
-	buf:setcur(buf.ci + n, buf.cj)
+	b:setcur(b.ci + n, b.cj)
 end
 
-function e.goright(n)
+function e.goright(b, n)
 	n = n or 1
-	local ln = #buf.ll[buf.ci]
+	local ln = #b.ll[b.ci]
 	while n > 0 do
-		buf.cj = buf.cj + 1
-		if buf.cj > ln then -- goto beg of next line
-			buf.ci = buf.ci + 1
-			if buf.ci > #buf.ll then
-				e.goeot()
+		b.cj = b.cj + 1
+		if b.cj > ln then -- goto beg of next line
+			b.ci = b.ci + 1
+			if b.ci > #b.ll then
+				e.goeot(b)
 				return false 
 			end
-			ln = #buf.ll[buf.ci]
-			buf.cj = 0
+			ln = #b.ll[b.ci]
+			b.cj = 0
 		end
 		n = n - 1
 	end
 	return true
 end
 
-function e.goleft(n)
+function e.goleft(b, n)
 	n = n or 1
 	while n > 0 do
-		buf.cj = buf.cj - 1
-		if buf.cj < 0 then -- goto end of prev line
-			buf.ci = buf.ci - 1
-			if buf.ci < 1 then 
-				e.gobot()
+		b.cj = b.cj - 1
+		if b.cj < 0 then -- goto end of prev line
+			b.ci = b.ci - 1
+			if b.ci < 1 then 
+				e.gobot(b)
 				return false
 			end
-			buf.cj = #buf.ll[buf.ci]
+			b.cj = #b.ll[b.ci]
 		end
 		n = n - 1
 	end
 	return true
 end
 
-function e.pgdn() 
-	buf:setcur(buf.ci + buf.box.l - 2, buf.cj)
+function e.pgdn(b) 
+	b:setcur(b.ci + b.box.l - 2, b.cj)
 end
 
-function e.pgup() 
-	buf:setcur(buf.ci - buf.box.l - 2, buf.cj)
+function e.pgup(b) 
+	b:setcur(b.ci - b.box.l - 2, b.cj)
 end
 
-function e.del()
-	local b = buf
+function e.del(b)
+
 	if b:ateot() then return false end
 	local ci, cj = b:getcur()
 	if b:ateol() then return b:bufdel(ci+1, 0) end
 	return b:bufdel(ci, cj+1)
 end
 
-function e.bksp()
-	return e.goleft() and e.del()
+function e.bksp(b)
+	return e.goleft(b) and e.del(b)
 end
 
-function e.insch(k)
+function e.insch(b, k)
 	-- insert char with code k
 	-- (don't remove. used by editor loop and macroplay)
-	return buf:bufins(char(k))
+	return b:bufins(char(k))
 end
 
-function e.insert(x)
+function e.insert(b, x)
 	-- insert x at cursor
 	-- x can be a string or a list of lines (a table)
 	-- if x is a string, it may contain newlines ('\n')
-	return buf:bufins((type(x) == "string") and lines(x) or x)
+	return b:bufins((type(x) == "string") and lines(x) or x)
 end
 
-function e.nl()
+function e.nl(b)
 	-- equivalent to e.insert("\n")
-	return buf:bufins({"", ""})
+	return b:bufins({"", ""})
 end
 
-function e.searchpattern(pat, plain)
+function e.searchpattern(b, pat, plain)
 	-- forward search a lua or plain text pattern pat, starting at cursor.
 	-- pattern is searched one line at a time
 	-- if plain is true, pat is a plain text pattern. special
@@ -1113,7 +1113,7 @@ function e.searchpattern(pat, plain)
 	-- if the pattern is found, cursor is moved at the beginning of
 	-- the pattern and the function return true. else, the cursor
 	-- is not moved and the function returns false.
-	local b = buf
+
 	local oci, ocj = b:getcur() -- save the original cursor position
 	while true do
 		local l, cj = b:getline()
@@ -1123,24 +1123,24 @@ function e.searchpattern(pat, plain)
 			return true
 		end -- found
 		if b:atlast() then break end
-		e.godown(1)
+		e.gohome(b); e.godown(b, 1)
 	end--while
 	-- not found
 	b:setcur(oci, ocj) -- restore cursor position	
 	return false
 end
 
-function e.searchagain(actfn)
+function e.searchagain(b, actfn)
 	-- search editor.pat. If found, execute actfn
 	-- default action is to display a message "found!")
 	-- on success, return the result of actfn() or true.
 	-- (note: search does NOT ignore case)
-	local b = buf
+
 	if not editor.pat then 
 		msg("no string to search")
 		return nil
 	end
-	local r = e.searchpattern(editor.pat, editor.searchplain)
+	local r = e.searchpattern(b, editor.pat, editor.searchplain)
 	if r then
 		if actfn then 
 			return actfn()
@@ -1153,48 +1153,17 @@ function e.searchagain(actfn)
 	end
 end
 
-function e.searchagain0(actfn)
-	-- search editor.pat. If found, execute actfn
-	-- default action is to display a message "found!")
-	-- on success, return the result of actfn() or true.
-	-- (note: search does NOT ignore case)
-	local b = buf
-	if not editor.pat then 
-		msg("no string to search")
-		return nil
-	end
-	local oci, ocj = b:getcur() -- save the original cursor position
-	while true do
-		local l, cj = b:getline()
-		local j = l:find(editor.pat, cj+2, true) --plain text search
-		if j then --found
-			b:setcurj(j-1)
-			if actfn then 
-				return actfn()
-			else
-				msg("found!")
-				return true
-			end
-		end -- found
-		if not (e.goright()) then
-			break -- at end of file and not found yet
-		end
-	end--while
-	msg("not found")
-	b:setcur(oci, ocj) -- restore cursor position
-end
-
-function e.search()
+function e.search(b)
 	editor.pat = readstr("Search: ")
 	if not editor.pat then 
 		msg("aborted.")
 		return
 	end
-	return e.searchagain()
+	return e.searchagain(b)
 end
 
-function e.replaceagain()
-	local b = buf
+function e.replaceagain(b)
+
 	local replall = false -- true if user selected "replace (a)ll"
 	local n = 0 -- number of replaced instances
 	function replatcur()
@@ -1228,11 +1197,11 @@ function e.replaceagain()
 			end
 		end
 	end--replfn
-	while e.searchagain(replfn) do end
+	while e.searchagain(b, replfn) do end
 	msg(strf("replaced %d instance(s)", n))
 end--replaceagain
 
-function e.replace()
+function e.replace(b)
 	editor.pat = readstr("Search: ")
 	if not editor.pat then 
 		msg("aborted.")
@@ -1243,14 +1212,14 @@ function e.replace()
 		msg("aborted.")
 		return
 	end
-	return e.replaceagain()
+	return e.replaceagain(b)
 end--replace
 
-function e.kill() 
+function e.kill(b) 
 	-- wipe from cursor to end of line
 	-- del nl but do not modify the kill buffer if at eol
-	local b = buf
-	if b:ateol() then return e.del() end
+
+	if b:ateol() then return e.del(b) end
 	local di, dj = b:geteol()
 	sl = b:getlines(di, dj)
 	editor.kll = sl
@@ -1262,7 +1231,7 @@ function e.killeol(b, appflag)
 	-- or append to the kill buffer if last action was also 'killeol'
 	-- if appflag is true, always append to the kill buffer 
 	-- (default: false)
-	local b = buf
+
 	if b:ateot() then return end
 	appflag = appflag or (editor.lastresult == e.killeol)
 	if not appflag then 
@@ -1282,23 +1251,20 @@ function e.killeol(b, appflag)
 	return e.killeol 
 end--killeol
 
-function e.mark()
-	local b = buf
+function e.mark(b)
 	b.si, b.sj = b.ci, b.cj
 	msg("Mark set.")
 	b.chgd = true
 end
 
-function e.exch_mark()
-	local b = buf
+function e.exch_mark(b)
 	if b.si then
 		b.si, b.ci = b.ci, b.si
 		b.sj, b.cj = b.cj, b.sj
 	end
 end
 
-function e.wipe()
-	local b = buf
+function e.wipe(b)
 	if not b.si then msg("No selection."); return end
 	-- make sure cursor is at beg of selection
 	if b:markbeforecur() then e.exch_mark() end 
@@ -1308,33 +1274,30 @@ function e.wipe()
 	b.si = nil
 end--wipe	
 
-function e.yank()
-	local b = buf
+function e.yank(b)
 	if not editor.kll or #editor.kll == 0 then 
 		msg("nothing to yank!"); return 
 	end
 	return b:bufins(editor.kll)
 end--yank
 
-function e.undo()
-	local b = buf
+function e.undo(b)
 	if b.ualtop == 0 then msg("nothing to undo!"); return end
 	b:op_undo(b.ual[b.ualtop])
 	b.ualtop = b.ualtop - 1
 end--undo
 
-function e.redo()
-	local b = buf
+function e.redo(b)
 	if b.ualtop == #b.ual then msg("nothing to redo!"); return end
 	b.ualtop = b.ualtop + 1
 	b:op_redo(b.ual[b.ualtop])
 end--redo
 
-function e.quiteditor()
+function e.quiteditor(b)
 	editor.quit = true
 end
 
-function e.exiteditor()
+function e.exiteditor(b)
 	local anyunsaved = false
 	for i, bx in ipairs(editor.buflist) do 
 		anyunsaved = anyunsaved or bx.unsaved
@@ -1351,7 +1314,7 @@ function e.exiteditor()
 	msg("exiting.")
 end
 
-function e.newbuffer(fname, ll)
+function e.newbuffer(b, fname, ll)
 	ll = ll or { "" } -- default is a buffer with one empty line
 	fname = fname or editor.readstr("Buffer name: ")
 	local bx = buffer.new(ll) 
@@ -1365,7 +1328,7 @@ function e.newbuffer(fname, ll)
 	editor.fullredisplay()
 end
 
-function e.nextbuffer()
+function e.nextbuffer(b)
 	-- switch to next buffer
 	local bln = #editor.buflist
 	editor.bufindex = editor.bufindex % bln + 1
@@ -1373,7 +1336,7 @@ function e.nextbuffer()
 	editor.fullredisplay()
 end--nextbuffer
 
-function e.prevbuffer()
+function e.prevbuffer(b)
 	-- switch to previous buffer
 	local bln = #editor.buflist
 	-- if bufindex>1, the "previous" buffer index should be bufindex-1
@@ -1383,16 +1346,15 @@ function e.prevbuffer()
 	editor.fullredisplay()
 end--nextbuffer
 
-function e.findfile(fname)
+function e.findfile(b, fname)
 	fname = fname or editor.readstr("Open file: ")
 	if not fname then editor.msg""; return end
 	local ll, errmsg = readfile(fname)
 	if not ll then editor.msg(errmsg); return end
-	e.newbuffer(fname, ll)
+	e.newbuffer(b, fname, ll)
 end--findfile
 
 function e.writefile(b, fname)
-	local b = buf
 	fname = fname or editor.readstr("Write to file: ")
 	if not fname then editor.msg("Aborted."); return end
 	fh, errmsg = io.open(fname, "w")
@@ -1404,8 +1366,7 @@ function e.writefile(b, fname)
 	editor.msg(fname .. " saved.")
 end--writefile
 
-function e.savefile()
-	local b = buf
+function e.savefile(b)
 	e.writefile(b, b.filename)
 end--savefile
 
@@ -1414,12 +1375,12 @@ local function macrorecord(x)
 	table.insert(editor.macroseq, x)
 end
 
-function e.macrostartrec()
+function e.macrostartrec(b)
 	editor.macroseq = {}
 	editor.macrorec = true
 end
 
-function e.macrostoprec()
+function e.macrostoprec(b)
 	editor.macrorec = false
 end
 
@@ -1442,10 +1403,9 @@ function e.macroplay()
 	end
 end
 
-function e.gotoline(lineno)
+function e.gotoline(b, lineno)
 	-- prompt for a line number, go there
 	-- if lineno is provided, don't prompt.
-	local b = buf
 	lineno = lineno or tonumber(editor.readstr("line number: "))
 	if not lineno then
 		msg("invalid line number.")
@@ -1454,24 +1414,23 @@ function e.gotoline(lineno)
 	end
 end--gotoline
 
-function e.help()
+function e.help(b)
 	for i, bx in ipairs(editor.buflist) do
 		if bx.filename == "*HELP*" then
 			buf = bx; editor.bufindex = i
-			editor.fullredisplay()
+			editor.fullredisplay(b)
 			return
 		end
 	end -- help buffer not found, then build it.
 	local ll = {}
 	for l in editor.helptext:gmatch("(.-)\n") do table.insert(ll, l) end
-	return e.newbuffer("*HELP*", ll)
+	return e.newbuffer(b, "*HELP*", ll)
 end--help
 
-function e.test()
+function e.test(b)
 	-- this function is just used for quick debug tests
 	-- (to be removed!)
 	--
-	local b = buf
 --~ 	-- test readstr
 --~ 	s = readstr("enter a string: ")
 --~ 	if not s then msg"NIL!" ; return end
@@ -1670,12 +1629,12 @@ local function editor_loop(ll, fname)
 		if act then 
 			msg(kname)
 			macrorecord(act)
-			editor.lastresult = act()
+			editor.lastresult = act(buf)
 		elseif (not k2) and ((k >= 32 and k < 127) 
 			or (k >= 160 and k < 256) 
 			or (k == 9)) then
 			macrorecord(k)
-			editor.lastresult = e.insch(k)
+			editor.lastresult = e.insch(buf, k)
 		else
 			editor.msg(kname .. " not bound")
 		end
