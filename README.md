@@ -68,49 +68,49 @@ As they say, *it works on my PC...*
 
 
 Cursor movement
-	Arrows, PageUp, PageDown, Home, End
-	^A ^E           go to beginning, end of line
-	^B ^F           go backward, forward
-	^N ^P           go to next line, previous line
-	esc-<           go to beginning of buffer
-	esc->           go to end of buffer
-	^S              forward search (plain text, case sensitive)
-	^R              search again (string previously entered with ^S)
- 	esc-g           prompt for a line number, go there
+        Arrows, PageUp, PageDown, Home, End
+
+        ^A, ^E          go to beginning, end of line
+        ^B, ^F          go backward, forward
+        ^N, ^P          go to next line, previous line
+        esc-<           go to beginning of buffer
+        esc->           go to end of buffer
+        ^S              forward search (plain text, case sensitive)
+        ^R              search again (string previously entered with ^S)
+        esc-g           prompt for a line number, go there
   
 Edition
-	^D, Delete      delete character at cursor
-	^H, bcksp       delete previous character
-	^K              cut from cursor to end of line
-	esc-k           cut from cursor to beginning of next line
-	                (if repeated, lines are appended to the paste buffer)
-	^space, ^@      mark  (set beginning of selection)
-	^W              wipe (cut selection)
-	^Y              yank (paste)
-	esc-5           replace
-	esc-7           replace again (with same strings)
+        ^D, Delete      delete character at cursor
+        ^H, bcksp       delete previous character
+        ^K              cut from cursor to end of line
+        esc-k           cut from cursor to beginning of next line
+                        (if repeated, lines are appended to the paste buffer)
+        ^space, ^@      mark  (set beginning of selection)
+        ^W              wipe (cut selection)
+        ^Y              yank (paste)
+        esc-5           replace
+        esc-7           replace again (with same strings)
 
 Files, buffers
-	^X^F            prompt for a filename, read the file in a new buffer
-	^X^W            prompt for a filename, write the current buffer
-	^X^S            save the current buffer
-	^X^B            create a new, empty buffer
-	^X^N            switch to the next buffer
-	^X^P            switch to the previous buffer
+        ^X^F            prompt for a filename, read the file in a new buffer
+        ^X^W            prompt for a filename, write the current buffer
+        ^X^S            save the current buffer
+        ^X^B            create a new, empty buffer
+        ^X^N            switch to the next buffer
+        ^X^P            switch to the previous buffer
 
 Misc.
-	^X^C            exit the editor
-	^G              abort the current command
-	^Z              undo 
-	esc-z           redo 
-	^X(             record macro
-	^X)             stop recording macro
-	^Xe, ^]         play macro
-	^L              redisplay the screen (useful if the screen was 
+        ^X^C            exit the editor
+        ^G              abort the current command
+        ^Z              undo 
+        esc-z           redo 
+        ^X(             record macro
+        ^X)             stop recording macro
+        ^Xe, ^]         play macro
+        ^L              redisplay the screen (useful if the screen was 
                         garbled or its dimensions changed)
-	F1, ^X^H        this help text
+        F1, ^X^H        this help text
 
-]]
 ```
 
 ### Usage
@@ -122,20 +122,20 @@ Misc.
 
 The `term` module includes all the basic functionnalities to display strings in various colors, move the cursor, erase lines and read keys.
 
-This module is at the beginning of the ple.lua file. It does not use any other external library.  The only reason for embedding it within ple.lua is to deliver the editor as a single lua file.
+This module is embedded at the beginning of the ple.lua file. It does not use any other external library.  The only reason for embedding it within ple.lua is to deliver the editor as a single lua file.
 
 To make it available for other applications, it is also distributed as a separate module. See the [plterm](https://github.com/philanc/plterm) repository.
 
-Like [linenoise](https://github.com/antirez/linenoise), it does not use ncurses, terminfo or termcap. It uses only very common ANSI sequences that are supported by (at least) the Linux console, xterm and rxvt.
+Like [linenoise](https://github.com/antirez/linenoise), it does not use ncurses, terminfo or termcap. It uses only very common ANSI sequences that are supported by (at least) the Linux console, xterm, rxvt and vte-based terminal emulators.
 
-The origin of the term module is some code [contributed](http://lua-users.org/lists/lua-l/2009-12/msg00937.html) by Luiz Henrique de Figueiredo on the Lua mailing list some time ago.
+The term module includes some code [contributed](http://lua-users.org/lists/lua-l/2009-12/msg00937.html) by Luiz Henrique de Figueiredo on the Lua mailing list some time ago.
 
 I added some functions for input, getting the cursor position or the screen dimension, and stty-based mode handling .
 
 The input function reads and parses the escape sequences sent by function keys (arrows, F1-F12, insert, delete, etc.). See the definitions in `term.keys`.
 
 
-Term functions:
+Term functions: - see [plterm](https://github.com/philanc/plterm)
 ```
 clear()     -- clear screen
 cleareol()  -- clear to end of line
@@ -146,8 +146,8 @@ right(n)
 left(n)     -- move the cursor by n positions (default to 1)
 color(f, b, m)
             -- change the color used to write characters
-			   (foreground color, background color, modifier)
-			   see term.colors
+               (foreground color, background color, modifier)
+               see term.colors
 hide()
 show()      -- hide or show the cursor
 save()
@@ -155,17 +155,17 @@ restore()   -- save and restore the position of the cursor
 reset()     -- reset the terminal (colors, cursor position)
 
 input()     -- input iterator (coroutine-based)
-		       return a "next key" function that can be iteratively called 
-			   to read a key (escape sequences returned by function keys 
-			   are parsed)
+               return a "next key" function that can be iteratively called 
+               to read a key (escape sequences returned by function keys 
+               are parsed)
 rawinput()  -- same, but escape sequences are not parsed.
 getcurpos() -- return the current position of the cursor
 getscrlc()  -- return the dimensions of the screen 
                (number of lines and columns)
 keyname()   -- return a printable name for any key
                - key names in term.keys for function keys,
-			   - control characters are represented as "^A"
-			   - the character itself for other keys
+               - control characters are represented as "^A"
+               - the character itself for other keys
 
 tty mode management functions
 
