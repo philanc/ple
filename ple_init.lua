@@ -60,6 +60,34 @@ end
 -- bind function
 editor.bindings[27][101] = e.edit_file_at_cursor -- ESC-e
 
+
+-- eval buffer as a Lua chunk (in the editor environment)
+function e.eval_lua_buffer(b)
+	local msg = editor.msg
+	local strf = string.format
+	local txt = b:gettext()
+	local r, s, fn, errm
+	fn, errm = load(txt, "buffer", "t") -- chunkname=buffer, mode=text only
+	if not fn then 
+		msg(errm)
+	else
+		pr, r, errm = pcall(fn)
+		if not pr then msg(strf("lua error: %s", r)); return end
+		if not r then msg(strf("nil: %s", errm)); return end
+		if r == true then msg(errm); return end
+		-- display r in *LUA* buffer
+		local lb = e.newbuffer(b, "*LUA*") -- the Lua buffer
+		lb:settext(r)
+		editor.fullredisplay(lb)
+		return
+	end
+end
+-- bind function
+editor.bindings[27][108] = e.eval_lua_buffer -- ESC-l
+	
+
+
+
 ------------------------------------------------------------------------
 -- append some text to the initial message displayed when entering
 -- the editor

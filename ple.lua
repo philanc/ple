@@ -465,7 +465,9 @@ editor = {
 
 -- buf is the current buffer
 -- this is the same object as editor.buflist[editor.bufindex]
-local buf = {}  
+-- make it global for extension modules (eg. ple_init.lua)
+--~ local buf = {}  
+buf = {}  
 
 
 -- style functions
@@ -1314,9 +1316,31 @@ function e.exiteditor(b)
 	msg("exiting.")
 end
 
+function e.help(b)
+	for i, bx in ipairs(editor.buflist) do
+		if bx.filename == "*HELP*" then
+			buf = bx; editor.bufindex = i
+			editor.fullredisplay(b)
+			return
+		end
+	end -- help buffer not found, then build it.
+	local ll = {}
+	for l in editor.helptext:gmatch("(.-)\n") do table.insert(ll, l) end
+	return e.newbuffer(b, "*HELP*", ll)
+end--help
+
 function e.newbuffer(b, fname, ll)
 	ll = ll or { "" } -- default is a buffer with one empty line
 	fname = fname or editor.readstr("Buffer name: ")
+	-- try to find the buffer if it already exists
+	for i, bx in ipairs(editor.buflist) do
+		if bx.filename == fname then
+			buf = bx; editor.bufindex = i
+			editor.fullredisplay(b)
+			return buf
+		end
+	end
+	-- buffer doesn't exist. create it.
 	local bx = buffer.new(ll) 
 	bx.actions = editor.edit_actions 
 	bx.filename = fname
@@ -1326,6 +1350,7 @@ function e.newbuffer(b, fname, ll)
 	editor.bufindex = bi
 	buf = bx
 	editor.fullredisplay()
+	return buf
 end
 
 function e.nextbuffer(b)
@@ -1483,7 +1508,7 @@ Files, buffers
 	^X^F		prompt for a filename, read the file in a new buffer
 	^X^W		prompt for a filename, write the current buffer
 	^X^S		save the current buffer
-	^X^B		create a new, empty buffer
+	^X^B		switch to a named buffer or create a new buffer
 	^X^N		switch to the next buffer
 	^X^P		switch to the previous buffer
 
