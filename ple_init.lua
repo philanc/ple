@@ -74,7 +74,7 @@ function e.eval_lua_buffer(b)
 		pr, r, errm = pcall(fn)
 		if not pr then msg(strf("lua error: %s", r)); return end
 		if not r then msg(strf("nil: %s", errm)); return end
-		if r == true then msg(errm); return end
+		if r == true then msg(strf("ok. %s", errm or "")); return end
 		-- display r in *LUA* buffer
 		local lb = e.newbuffer(b, "*LUA*") -- the Lua buffer
 		lb:settext(r)

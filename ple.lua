@@ -1641,7 +1641,8 @@ local function editor_loop(ll, fname)
 	editor.initmsg = "Help: F1 or ^X^H or esc-1"
 	local r = editor_loadinitfile()
 	style.normal()
-	e.newbuffer(fname, ll); 
+	e.newbuffer(nil, fname, ll); 
+		-- 1st arg is current buffer (unused for newbuffer, so nil) 
 	msg(editor.initmsg)
 	redisplay(buf) -- adjust cursor to beginning of buffer
 	while not editor.quit do
