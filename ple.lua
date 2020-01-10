@@ -1269,7 +1269,7 @@ end
 function e.wipe(b)
 	if not b.si then msg("No selection."); return end
 	-- make sure cursor is at beg of selection
-	if b:markbeforecur() then e.exch_mark() end 
+	if b:markbeforecur() then e.exch_mark(b) end 
 	local si, sj = b:getsel()
 	editor.kll = b:getlines(si, sj)
 	b:bufdel(si, sj)

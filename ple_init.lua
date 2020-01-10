@@ -62,6 +62,10 @@ editor.bindings[27][101] = e.edit_file_at_cursor -- ESC-e
 
 
 -- eval buffer as a Lua chunk (in the editor environment)
+-- if the chunk returns a string, it is inserted  at the beginning of 
+-- the last line of the buffer (it allows the buffer to end with 
+-- a multiline comment in which the string is inserted)
+
 function e.eval_lua_buffer(b)
 	local msg = editor.msg
 	local strf = string.format
@@ -74,11 +78,11 @@ function e.eval_lua_buffer(b)
 		pr, r, errm = pcall(fn)
 		if not pr then msg(strf("lua error: %s", r)); return end
 		if not r then msg(strf("nil: %s", errm)); return end
-		if r == true then msg(strf("ok. %s", errm or "")); return end
-		-- display r in *LUA* buffer
-		local lb = e.newbuffer(b, "*LUA*") -- the Lua buffer
-		lb:settext(r)
-		editor.fullredisplay(lb)
+		-- go at the end of buffer, beginning of line:
+		e.goeot(b); e.gohome(b)
+		e.insert(b, tostring(r))
+		e.nl(b); e.insert(b, "---"); e.nl(b)
+		editor.fullredisplay(b)
 		return
 	end
 end
