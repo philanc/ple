@@ -555,6 +555,7 @@ function editor.statusline()
 	s = s .. strf("[%s] ", buf.filename or "unnamed")
 	s = s .. strf("(%s) ", buf.unsaved and "*" or "")
 	s = s .. strf("%s ", editor.macrorec and "REC" or "")
+	s = s .. strf("%s ", editor.tabspaces and "SP" or "TAB")
 	s = s .. strf("-- Help: ^X^H ", #buf.ual)
 	s = s .. dbgs
 	return s
@@ -1093,6 +1094,17 @@ function e.insch(b, k)
 	return b:bufins(char(k))
 end
 
+function e.tab(b)
+	local tn = editor.tabspaces
+	if not tn then -- insert a tab char
+		return b:bufins(char(9)) 
+	end
+	local ci, cj = b:getcur()
+	local n = tn - ((cj) % tn)
+	return b:bufins(string.rep(char(32), n))
+end
+	
+
 function e.insert(b, x)
 	-- insert x at cursor
 	-- x can be a string or a list of lines (a table)
@@ -1539,9 +1551,9 @@ editor.bindings = { -- actions binding for text edition
 	[6] = e.goright,	-- ^F
 	[7] = e.cancel,		-- ^G (do nothing, cancel selection)
 	[8] = e.bksp,		-- ^H
-	--[9] (TAB)
+	[9] = e.tab,		-- ^I
 	--[10]		-- ^J
-	[11] = e.kill,		-- ^k
+	[11] = e.kill,		-- ^K
 	[12] = e.redisplay,	-- ^L
 	[13] = e.nl,		-- ^M (insert newline)
 	[14] = e.godown,	-- ^N

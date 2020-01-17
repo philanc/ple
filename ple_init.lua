@@ -11,6 +11,17 @@
 ------------------------------------------------------------------------
 
 
+-- editor.tabspaces: defines how the TAB key should be handled.  
+--      n:integer :: number of spaces to insert when the TAB key is pressed
+--                   (according to cursor position)
+--                   eg.:  editor.tabspaces = 4
+--      or false  :: insert a TAB char (0x09) when the TAB key is pressed
+--                   eg.:  editor.tabspaces = false
+editor.tabspaces = false
+editor.tabspaces = 8
+
+---
+
 -- Let's add a new action "newline_shell" which takes the current line,
 -- passes it as a command to the shell and inserts the result at the cursor.
 
