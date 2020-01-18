@@ -17,12 +17,11 @@
 --                   eg.:  editor.tabspaces = 4
 --      or false  :: insert a TAB char (0x09) when the TAB key is pressed
 --                   eg.:  editor.tabspaces = false
-editor.tabspaces = false
+-- editor.tabspaces = false
 editor.tabspaces = 8
 
 ---
-
--- Let's add a new action "newline_shell" which takes the current line,
+-- Add a new action "newline_shell" which takes the current line,
 -- passes it as a command to the shell and inserts the result at the cursor.
 
 local e = editor.actions
@@ -88,8 +87,8 @@ function e.eval_lua_buffer(b)
 		pr, r, errm = pcall(fn)
 		if not pr then msg(strf("lua error: %s", r)); return end
 		if not r then msg(strf("return: %s, %s", r, errm)); return end
-		e.goeot(b); 
-		e.insert(b, strf("\n--[[\n%s\n]]", tostring(r)))
+		e.goeot(b); e.gohome(b)
+		e.insert(b, strf("--\n%s\n", tostring(r)))
 		editor.fullredisplay(b)
 		return
 	end
