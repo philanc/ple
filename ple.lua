@@ -1259,8 +1259,12 @@ function e.killeol(b, appflag)
 	local di, dj = b:geteol()
 	local s = b:getlines(di, dj)[1]
 	table.insert(editor.kll, s)  -- insert the end of line
-	table.insert(editor.kll, "") -- insert a newline
-	b:bufdel(di+1, 0) -- del to bol of next line
+	if b:atlast() then
+		b:bufdel(di, dj) -- del to eol of current (last) line
+	else
+		table.insert(editor.kll, "") -- insert a newline
+		b:bufdel(di+1, 0) -- del to bol of next line
+	end
 	-- allow to detect that previous command was also killeol
 	return e.killeol 
 end--killeol
