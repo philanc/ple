@@ -1417,9 +1417,7 @@ function e.help(b)
 			return
 		end
 	end -- help buffer not found, then build it.
-	local ll = {}
-	for l in editor.helptext:gmatch("(.-)\n") do table.insert(ll, l) end
-	return e.newbuffer(b, "*HELP*", ll)
+	return e.newbuffer(b, "*HELP*", lines(editor.helptext))
 end--help
 
 function e.test(b)
