@@ -1360,6 +1360,13 @@ function e.prevbuffer(b)
 	editor.fullredisplay()
 end--nextbuffer
 
+function e.outbuffer(b)
+	-- switch to *OUT* buffer. 
+	-- if already in OUT buffer, switch back to previous buffer
+	if b.filename == "*OUT*" then return e.prevbuffer(b) end
+	return e.newbuffer(b, "*OUT*")
+end --outbuffer
+	
 function e.findfile(b, fname)
 	fname = fname or editor.readstr("Open file: ")
 	if not fname then editor.msg""; return end
@@ -1429,9 +1436,9 @@ editor.helptext = [[
 
 Cursor movement
 	Arrows, PageUp, PageDown, Home, End
-	^A ^E		go to beginning, end of line
-	^B ^F		go backward, forward
-	^N ^P		go to next line, previous line
+	^A, ^E		go to beginning, end of line
+	^B, ^F		go backward, forward
+	^N, ^P		go to next line, previous line
 	^U, ^V		page up, page down
 	^X<		go to beginning of buffer
 	^X> 		go to end of buffer
@@ -1486,7 +1493,7 @@ editor.bindings = { -- actions binding for text edition
 	[12] = e.redisplay,	-- ^L
 	[13] = e.nl,		-- ^M (insert newline)
 	[14] = e.godown,	-- ^N
-	--[15]   	-- ^O
+	[15] = e.outbuffer,  	-- ^O
 	[16] = e.goup,		-- ^P
 	[17] = e.quiteditor,	-- ^Q
 	[18] = e.searchagain,	-- ^R
