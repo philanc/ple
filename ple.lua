@@ -1226,46 +1226,6 @@ function e.replace(b)
 	return e.replaceagain(b)
 end--replace
 
-function e.kill(b) 
-	-- wipe from cursor to end of line
-	-- del nl but do not modify the kill buffer if at eol
-
-	if b:ateol() then return e.del(b) end
-	local di, dj = b:geteol()
-	sl = b:getlines(di, dj)
-	editor.kll = sl
-	return b:bufdel(di, dj)
-end--kill
-
-function e.killeol(b, appflag)
-	-- wipe from cursor to eol included. copy to the kill buffer
-	-- or append to the kill buffer if last action was also 'killeol'
-	-- if appflag is true, always append to the kill buffer 
-	-- (default: false)
-
-	if b:ateot() then return end
-	appflag = appflag or (editor.lastresult == e.killeol)
-	if not appflag then 
-		-- start with a fresh kill buffer
-		editor.kll = {}
-	else
-		-- here either kll is empty 
-		-- or last item is an empty line => remove it
-		table.remove(editor.kll)
-	end
-	local di, dj = b:geteol()
-	local s = b:getlines(di, dj)[1]
-	table.insert(editor.kll, s)  -- insert the end of line
-	if b:atlast() then
-		b:bufdel(di, dj) -- del to eol of current (last) line
-	else
-		table.insert(editor.kll, "") -- insert a newline
-		b:bufdel(di+1, 0) -- del to bol of next line
-	end
-	-- allow to detect that previous command was also killeol
-	return e.killeol 
-end--killeol
-
 function e.mark(b)
 	b.si, b.sj = b.ci, b.cj
 	msg("Mark set.")
@@ -1279,15 +1239,30 @@ function e.exch_mark(b)
 	end
 end
 
-function e.wipe(b)
-	if not b.si then msg("No selection."); return end
+function e.wipe(b, nokeep)
+	-- wipe selection, or kill current line if no selection
+	-- if nokeep is true, deleted text is not kept in the kill list
+	-- (default false)
+	if not b.si then 
+		msg("No selection.")
+		if b:atlast() then -- add an empty line at end
+			e.goeot(b); e.nl(b); e.goup(b)
+		end
+		e.gohome(b)
+		local xi, xj
+		xi, xj = b.ci+1, 0
+		if not nokeep then editor.kll = b:getlines(xi, xj) end
+		b:bufdel(xi, xj)
+		return 
+	end
 	-- make sure cursor is at beg of selection
 	if b:markbeforecur() then e.exch_mark(b) end 
 	local si, sj = b:getsel()
-	editor.kll = b:getlines(si, sj)
+	if not nokeep then editor.kll = b:getlines(si, sj) end
 	b:bufdel(si, sj)
 	b.si = nil
 end--wipe	
+
 
 function e.yank(b)
 	if not editor.kll or #editor.kll == 0 then 
@@ -1436,16 +1411,6 @@ function e.test(b)
 	-- this function is just used for quick debug tests
 	-- (to be removed!)
 	--
---~ 	-- test readstr
---~ 	s = readstr("enter a string: ")
---~ 	if not s then msg"NIL!" ; return end
---~ 	msg("the string is: '"..s.."'")
-
-	-- test kill
---~ 	b.ll = editor.kll or {}
---~ 	b:setcur(1, 0)
---~ 	b.chgd = true
-
 	s = b:gettext()
 	s = s:upper()
 	b:settext(s)
@@ -1475,11 +1440,8 @@ Cursor movement
 Edition
 	^D, Delete	delete character at cursor
 	^H, bcksp	delete previous character
-	^K		cut from cursor to end of line
-	esc-k		cut from cursor to beginning of next line
-			(if repeated, lines are appended to the paste buffer)
 	^space, ^@	mark  (set beginning of selection)
-	^W		wipe (cut selection)
+	^W		wipe (cut selection or cut line if no selection)
 	^Y		yank (paste)
 	esc-5		replace
 	esc-7		replace again (with same strings)
@@ -1518,7 +1480,7 @@ editor.bindings = { -- actions binding for text edition
 	[8] = e.bksp,		-- ^H
 	[9] = e.tab,		-- ^I
 	--[10]		-- ^J
-	[11] = e.kill,		-- ^K
+	--[11] 		-- ^K
 	[12] = e.redisplay,	-- ^L
 	[13] = e.nl,		-- ^M (insert newline)
 	[14] = e.godown,	-- ^N
@@ -1569,7 +1531,6 @@ editor.bindings = { -- actions binding for text edition
 		[60] = e.gobot,		-- esc <
 		[62] = e.goeot,		-- esc >
 		[103] = e.gotoline,	-- esc g
-		[107] = e.killeol,	-- esc k
 		[122] = e.redo,		-- esc z
 	},
 }--actions
