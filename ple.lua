@@ -1075,7 +1075,10 @@ function e.pgup(b)
 end
 
 function e.del(b)
-
+	-- if selection, delete it. Else, delete char
+	if b.si then 
+		return e.wipe(b, true) -- do not keep in wipe list
+	end
 	if b:ateot() then return false end
 	local ci, cj = b:getcur()
 	if b:ateol() then return b:bufdel(ci+1, 0) end
