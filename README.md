@@ -104,9 +104,6 @@ Misc.
         ^G              abort the current command
         ^Z              undo 
         esc-z           redo 
-        ^X(             record macro
-        ^X)             stop recording macro
-        ^Xe, ^]         play macro
         ^L              redisplay the screen (useful if the screen was 
                         garbled or its dimensions changed)
         F1, ^X^H        this help text
