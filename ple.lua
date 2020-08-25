@@ -1420,6 +1420,18 @@ function e.help(b)
 	return e.newbuffer(b, "*HELP*", lines(editor.helptext))
 end--help
 
+function e.prefix_ctlx(b)
+	local k = editor.nextk()
+	local kname = "^X-" .. term.keyname(k)
+	local act = editor.bindings_ctlx[k]
+	if not act then
+		msg(kname .. " not bound.")
+		return false
+	end
+	msg(kname)
+	return act(b)	
+end--prefix_ctlx
+
 function e.test(b)
 	-- this function is just used for quick debug tests
 	-- (to be removed!)
@@ -1507,10 +1519,10 @@ editor.bindings = { -- actions binding for text edition
 	[21] = e.pgup,		-- ^U
 	[22] = e.pgdn,		-- ^V
 	[23] = e.wipe,		-- ^W
-	-- [24]			-- ^X (prefix - see below)
+	[24] = e.prefix_ctlx,	-- ^X (prefix - see below)
 	[25] = e.yank,		-- ^Y
 	[26] = e.undo,		-- ^Z
-	-- [27] 		-- ESC (prefix - see below)
+	--[27] -- ESC is not used - confusion with function key sequences
 	--
 	[keys.kpgup]  = e.pgup,
 	[keys.kpgdn]  = e.pgdn,
@@ -1523,29 +1535,27 @@ editor.bindings = { -- actions binding for text edition
 	[keys.kup]    = e.goup,
 	[keys.kdown]  = e.godown,
 	[keys.kf1]    = e.help,
-	--
-	-- prefix keys
-	--
-	[24] = {	-- ^X
-		[2] = e.newbuffer,	-- ^X^B
-		[3] = e.exiteditor,	-- ^X^C
-		[6] = e.findfile,	-- ^X^F
-		[7] = e.gotoline,	-- ^X^G
-		[8] = e.help,		-- ^X^H
-		[11] = e.killeol,	-- ^X^K
-		[14] = e.nextbuffer,	-- ^X^N
-		[16] = e.prevbuffer,	-- ^X^P
-		[19] = e.savefile,	-- ^X^S
-		[23] = e.writefile,	-- ^X^W
-		[24] = e.exch_mark,	-- ^X^X		
-		[26] = e.redo,		-- ^X^Z
-		[53] = e.replace,	-- ^X 5 -%
-		[55] = e.replaceagain,	-- ^X 7 -&
-		[60] = e.gobot,		-- ^X <
-		[62] = e.goeot,		-- ^X >	
-	}, -- end of ^X bindings
+}--editor.bindings
 
-}--actions
+editor.bindings_ctlx = {  -- ^X<key>
+	[2] = e.newbuffer,	-- ^X^B
+	[3] = e.exiteditor,	-- ^X^C
+	[6] = e.findfile,	-- ^X^F
+	[7] = e.gotoline,	-- ^X^G
+	[8] = e.help,		-- ^X^H
+	[11] = e.killeol,	-- ^X^K
+	[14] = e.nextbuffer,	-- ^X^N
+	[16] = e.prevbuffer,	-- ^X^P
+	[19] = e.savefile,	-- ^X^S
+	[23] = e.writefile,	-- ^X^W
+	[24] = e.exch_mark,	-- ^X^X		
+	[26] = e.redo,		-- ^X^Z
+	[53] = e.replace,	-- ^X 5 -%
+	[55] = e.replaceagain,	-- ^X 7 -&
+	[60] = e.gobot,		-- ^X <
+	[62] = e.goeot,		-- ^X >	
+}--editor.bindings_ctlx
+	
 
 local function get_action(bindings, k, k2)
 	-- find action bound to k in bindings table.

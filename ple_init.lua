@@ -57,7 +57,7 @@ end
 
 	
 -- bind 'newline_shell' to ^X^M / ^X-return
-editor.bindings[24][13] = e.newline_shell
+editor.bindings_ctlx[13] = e.newline_shell
 
 
 -- edit file at cursor
@@ -68,7 +68,7 @@ function e.edit_file_at_cursor(b)
 	e.findfile(b, fname)
 end
 -- bind function
-editor.bindings[24][101] = e.edit_file_at_cursor -- ^Xe
+editor.bindings_ctlx[101] = e.edit_file_at_cursor -- ^Xe
 
 
 -- eval buffer as a Lua chunk (in the editor environment)
@@ -94,7 +94,7 @@ function e.eval_lua_buffer(b)
 	end
 end
 -- bind function
-editor.bindings[24][108] = e.eval_lua_buffer -- ^Xl
+editor.bindings_ctlx[108] = e.eval_lua_buffer -- ^Xl
 	
 
 
