@@ -1431,6 +1431,7 @@ Cursor movement
 	^A ^E		go to beginning, end of line
 	^B ^F		go backward, forward
 	^N ^P		go to next line, previous line
+	^U, ^V		page up, page down
 	^X<		go to beginning of buffer
 	^X> 		go to end of buffer
 	^S		forward search (plain text, case sensitive)
@@ -1484,13 +1485,14 @@ editor.bindings = { -- actions binding for text edition
 	[12] = e.redisplay,	-- ^L
 	[13] = e.nl,		-- ^M (insert newline)
 	[14] = e.godown,	-- ^N
+	--[15]   	-- ^O
 	[16] = e.goup,		-- ^P
 	[17] = e.quiteditor,	-- ^Q
 	[18] = e.searchagain,	-- ^R
 	[19] = e.search,	-- ^S
 	[20] = e.test,		-- ^T
-	--[21]		-- ^U
-	--[22]		-- ^V
+	[21] = e.pgup,		-- ^U
+	[22] = e.pgdn,		-- ^V
 	[23] = e.wipe,		-- ^W
 	-- [24]			-- ^X (prefix - see below)
 	[25] = e.yank,		-- ^Y

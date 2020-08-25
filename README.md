@@ -73,6 +73,7 @@ Cursor movement
         ^A, ^E          go to beginning, end of line
         ^B, ^F          go backward, forward
         ^N, ^P          go to next line, previous line
+	^U, ^V          page up, page down
         ^X<             go to beginning of buffer
         ^X>             go to end of buffer
         ^S              forward search (plain text, case sensitive)
