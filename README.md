@@ -82,11 +82,8 @@ Cursor movement
 Edition
         ^D, Delete      delete character at cursor
         ^H, bcksp       delete previous character
-        ^K              cut from cursor to end of line
-        esc-k           cut from cursor to beginning of next line
-                        (if repeated, lines are appended to the paste buffer)
         ^space, ^@      mark  (set beginning of selection)
-        ^W              wipe (cut selection)
+        ^W		wipe (cut selection or cut line if no selection)
         ^Y              yank (paste)
         esc-5           replace
         esc-7           replace again (with same strings)
