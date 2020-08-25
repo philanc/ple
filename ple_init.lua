@@ -88,7 +88,7 @@ function e.eval_lua_buffer(b)
 		if not pr then msg(strf("lua error: %s", r)); return end
 		if not r then msg(strf("return: %s, %s", r, errm)); return end
 		e.goeot(b); e.gohome(b)
-		e.insert(b, strf("--\n%s\n", tostring(r)))
+		e.insert(b, strf("\n%s\n", tostring(r)))
 		editor.fullredisplay(b)
 		return
 	end
