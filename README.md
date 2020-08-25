@@ -31,7 +31,7 @@ The major limitations the brave tester should consider are:
 - probably many others things that you would expect from a text editor!
 
 On the other hand, the editor already support:
-- a keybinding  a la Emacs (but much limited!)
+- a keybinding a la Emacs (but much limited!)
 - basic editing functions
 - basic search and replace functions (plain text only)
 - support for long lines (horizontal scroll, no provision for wrapping long lines)
@@ -73,11 +73,11 @@ Cursor movement
         ^A, ^E          go to beginning, end of line
         ^B, ^F          go backward, forward
         ^N, ^P          go to next line, previous line
-        esc-<           go to beginning of buffer
-        esc->           go to end of buffer
+        ^X<             go to beginning of buffer
+        ^X>             go to end of buffer
         ^S              forward search (plain text, case sensitive)
         ^R              search again (string previously entered with ^S)
-        esc-g           prompt for a line number, go there
+        ^X^G            prompt for a line number, go there
   
 Edition
         ^D, Delete      delete character at cursor
@@ -85,8 +85,8 @@ Edition
         ^space, ^@      mark  (set beginning of selection)
         ^W		wipe (cut selection or cut line if no selection)
         ^Y              yank (paste)
-        esc-5           replace
-        esc-7           replace again (with same strings)
+        ^X5             replace
+        ^X7             replace again (with same strings)
 
 Files, buffers
         ^X^F            prompt for a filename, read the file in a new buffer
@@ -100,7 +100,7 @@ Misc.
         ^X^C            exit the editor
         ^G              abort the current command
         ^Z              undo 
-        esc-z           redo 
+        ^X^Z            redo 
         ^L              redisplay the screen (useful if the screen was 
                         garbled or its dimensions changed)
         F1, ^X^H        this help text

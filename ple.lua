@@ -1431,11 +1431,11 @@ Cursor movement
 	^A ^E		go to beginning, end of line
 	^B ^F		go backward, forward
 	^N ^P		go to next line, previous line
-	esc-<		go to beginning of buffer
-	esc-> 		go to end of buffer
+	^X<		go to beginning of buffer
+	^X> 		go to end of buffer
 	^S		forward search (plain text, case sensitive)
 	^R		search again (string previously entered with ^S)
-	esc-g		prompt for a line number, go there
+	^X^G		prompt for a line number, go there
    
 Edition
 	^D, Delete	delete character at cursor
@@ -1443,8 +1443,8 @@ Edition
 	^space, ^@	mark  (set beginning of selection)
 	^W		wipe (cut selection or cut line if no selection)
 	^Y		yank (paste)
-	esc-5		replace
-	esc-7		replace again (with same strings)
+	^X5		replace
+	^X7		replace again (with same strings)
 
 Files, buffers
 	^X^F		prompt for a filename, read the file in a new buffer
@@ -1458,7 +1458,7 @@ Misc.
 	^X^C		exit the editor
 	^G		abort the current command
 	^Z		undo 
-	esc-z		redo 
+	^X^Z		redo 
 	^L		redisplay the screen (useful if the screen was 
 			garbled	or its dimensions changed)
 	F1, ^X^H	this help text
@@ -1515,24 +1515,21 @@ editor.bindings = { -- actions binding for text edition
 		[2] = e.newbuffer,	-- ^X^B
 		[3] = e.exiteditor,	-- ^X^C
 		[6] = e.findfile,	-- ^X^F
-		[7] = e.cancel,		-- ^X^G (cancel selection)
+		[7] = e.gotoline,	-- ^X^G
 		[8] = e.help,		-- ^X^H
+		[11] = e.killeol,	-- ^X^K
 		[14] = e.nextbuffer,	-- ^X^N
 		[16] = e.prevbuffer,	-- ^X^P
 		[19] = e.savefile,	-- ^X^S
 		[23] = e.writefile,	-- ^X^W
-		[24] = e.exch_mark,	-- ^X^X
-	},
-	[27] = {	-- ESC
-		[7] = e.cancel,		-- esc ^G (cancel selection)
-		[49] = e.help,		-- esc 1
-		[53] = e.replace,	-- esc 5 -%
-		[55] = e.replaceagain,	-- esc 7 -&
-		[60] = e.gobot,		-- esc <
-		[62] = e.goeot,		-- esc >
-		[103] = e.gotoline,	-- esc g
-		[122] = e.redo,		-- esc z
-	},
+		[24] = e.exch_mark,	-- ^X^X		
+		[26] = e.redo,		-- ^X^Z
+		[53] = e.replace,	-- ^X 5 -%
+		[55] = e.replaceagain,	-- ^X 7 -&
+		[60] = e.gobot,		-- ^X <
+		[62] = e.goeot,		-- ^X >	
+	}, -- end of ^X bindings
+
 }--actions
 
 local function get_action(bindings, k, k2)
@@ -1571,7 +1568,7 @@ end--editor_loadinitfile
 
 
 local function editor_loop(ll, fname)
-	editor.initmsg = "Help: F1 or ^X^H or esc-1"
+	editor.initmsg = "Help: F1 or ^X^H"
 	local r = editor_loadinitfile()
 	style.normal()
 	e.newbuffer(nil, fname, ll); 
