@@ -1291,7 +1291,11 @@ end
 function e.exiteditor(b)
 	local anyunsaved = false
 	for i, bx in ipairs(editor.buflist) do 
-		anyunsaved = anyunsaved or bx.unsaved
+		-- tmp buffers: if name starts with '*', 
+		-- buffer is not considered as unsaved
+		if bx.filename and not bx.filename:match("^%*") then
+			anyunsaved = anyunsaved or bx.unsaved
+		end
 	end
 	if anyunsaved then
 		local ch = readchar(
