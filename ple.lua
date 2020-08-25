@@ -536,9 +536,9 @@ function editor.status(m)
 	out(m); style.normal(); flush()
 end
 
-local dbgs = "::"
-function editor.dbg(s, ...)
-	dbgs = strf(s, ...)
+local dbgs = ""
+function editor.dbg(s)
+	dbgs = s or ""
 end
 	
 
@@ -550,11 +550,12 @@ function editor.statusline()
 --~ 	s = s .. strf("hs=%d ", buf.hs)
 --~ 	s = s .. strf("ual=%d ", #buf.ual)
 --~ 	s = s .. strf("buf=%d ", editor.bufindex)
-	s = s .. strf("[%s] ", buf.filename or "unnamed")
-	s = s .. strf("(%s) ", buf.unsaved and "*" or "")
-	s = s .. strf("%s ", editor.tabspaces and "SP" or "TAB")
-	s = s .. strf("-- Help: ^X^H ", #buf.ual)
-	s = s .. dbgs
+	s = s .. strf(
+		"[%s] (%s) %s -- Help: ^X^H -- %s", 
+		buf.filename or "unnamed", 
+		buf.unsaved and "*" or "", 
+		editor.tabspaces and "SP" or "TAB", 
+		dbgs)
 	return s
 end--statusline
 
