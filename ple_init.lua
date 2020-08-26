@@ -63,7 +63,8 @@ local function line_shell(b)
 		table.insert(ll, l)
 	end
 	fh:close()
-	-- go to end of line (DO NOT forget the buffer parameter!)
+	-- go to end of line 
+	-- (DO NOT forget the buffer parameter for all e.* functions)
 	e.goend(b)
 	-- insert a newline at the cursor
 	e.nl(b)
@@ -102,8 +103,8 @@ editor.bindings_ctlx[101] = edit_file_at_cursor -- ^Xe
 -- eval buffer as a Lua chunk 
 -- 	Beware! the chunk is evaluated **in the editor environment**
 --	which can be a way to shoot oneself in the foot!
--- if the chunk returns a string, it is inserted  at the end 
--- of the buffer in a multi-line comment
+-- chunk evaluation result is inserted  at the end 
+-- of the buffer in a multi-line comment.
 
 function e.eval_lua_buffer(b)
 	local msg = editor.msg 
