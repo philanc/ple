@@ -1432,6 +1432,32 @@ function e.prefix_ctlx(b)
 	return act(b)	
 end--prefix_ctlx
 
+-- useful functions for extensions (see usage examples in ple_init.lua)
+
+function e.getcur(b)
+	-- return the cursor position in the buffer b and the number
+	-- of lines in the buffer
+	-- eg.:  ci, cj, ln = e.getcur(b) 
+	-- ci is the line index and cj the column index
+	-- ci is in the range [1, ln]
+	-- cj is in the range [0, line length]
+	-- cj == 0 when the cursor is at the beginning of the line
+	--	(ie. before the first char)
+	return b.ci, b.cj, #b.ll
+end
+
+function e.setcur(b, ci, cj)
+	-- move the cursor to position ci, cj (see above)
+	b:setcur(ci, cj)
+end
+
+function e.getline(b, i)
+	-- return the i-th line of the buffer b (as a string)
+	-- if i is not provided, the current line is returned.
+	i = i or b.ci
+	return b.ll[i]
+end
+
 function e.test(b)
 	-- this function is just used for quick debug tests
 	-- (to be removed!)
