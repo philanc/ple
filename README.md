@@ -10,9 +10,9 @@ This is not intended to compete with large established editors (emacs, vim) or s
 
 The editor is entirely written in Lua.  The only external dependencies are the terminal itself which must support basic ANSI sequences and the unix command `stty` which is used to save/restore the terminal mode, and set the terminal in raw mode (required to read keys one at a time).
 
-It is written and tested with Lua 5.3. (there may be one or two goto and labels, and integer divisions somewhere...).  
+It is written and tested with Lua 5.3.
 
-PLE has been inspired by Antirez' [Kilo](https://github.com/antirez/kilo) editor. PLE structure and code have nothing to do with Kilo, but the idea to directly use standard ANSI sequences and bypass the usual terminfo and ncurses libraries comes in part from Kilo (and also from Antirez' more established [linenoise](https://github.com/antirez/linenoise) library)
+PLE has been inspired by Antirez' [Kilo](https://github.com/antirez/kilo) editor. PLE structure and code have nothing to do with Kilo, but the idea to directly use standard ANSI sequences and bypass the usual terminfo and ncurses libraries comes in part from Kilo and also from Antirez' more established [linenoise](https://github.com/antirez/linenoise) library.
 
 ### Limitations
 
@@ -20,7 +20,6 @@ PLE is ***Work in Progress***! It is not intended to be used for anything seriou
 
 The major limitations the brave tester should consider are:
 - no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others characters are displayed as a centered dot (code 183).
-- TAB length is set to 8 for all buffers
 - no word- or sentence- or paragraph-based movement.
 - the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
@@ -39,7 +38,6 @@ On the other hand, the editor already support:
 - crude undo/redo functions
 - multiple buffers (but just one window at a time for the moment)
 - read, write, save files.
-- simple macro recording and playing (a la emacs)
 - a minimal help command (F1 or ^X^H - give a short description of the basic bindings)
 
 Configuration -- the editor can be configured / customized with a 
@@ -57,7 +55,7 @@ A sample `ple_init.lua` file is provided. It defines an editor command to execut
 
 --
 
-At the moment, the complete editor is 40KB. It has been tested on xterm, rxvt and the Linux console. 
+At the moment, the complete editor is ~40KB. It has been tested on xterm, rxvt, vte-based terminals, and the Linux console. 
 
 As they say, *it works on my PC...*
 

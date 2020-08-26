@@ -1436,15 +1436,19 @@ function e.test(b)
 	-- this function is just used for quick debug tests
 	-- (to be removed!)
 	--
-	s = b:gettext()
-	s = s:upper()
-	b:settext(s)
+--~ 	s = b:gettext()
+--~ 	s = s:upper()
+--~ 	b:settext(s)
 
---~ 	-- test readchar
---~ 	local ch = readchar("test readchar: ", "[abc]")
---~ 	if not ch then msg("aborted!")
---~ 	else msg("readchar => "..ch)
---~ 	end
+	-- test readchar
+	while true do
+		local ch = readchar("test readchar (space to quit): ", ".")
+		if not ch or ch == " " then msg("aborted!"); break
+		else 
+			e.goeot(b); e.nl(b);
+			e.insert(b, strf("readchar => %d", byte(ch)))
+		end
+	end
 end--atest
 
 editor.helptext = [[
