@@ -457,6 +457,7 @@ local EOT = '~'  -- used to indicate that we are past the end of text
 editor = {
 	quit = false, -- set to true to quit editor_loop()
 	nextk = term.input(), -- the "read next key" function
+	keyname = term.keyname, -- return the displayable name of a key
 	buflist = {},  -- list of buffers
 	bufindex = 0,  -- index of current buffer
 }
@@ -1421,8 +1422,9 @@ function e.help(b)
 end--help
 
 function e.prefix_ctlx(b)
+	-- process ^X prefix
 	local k = editor.nextk()
-	local kname = "^X-" .. term.keyname(k)
+	local kname = "^X-" .. editor.keyname(k)
 	local act = editor.bindings_ctlx[k]
 	if not act then
 		msg(kname .. " not bound.")
