@@ -1313,18 +1313,6 @@ function e.exiteditor(b)
 	msg("exiting.")
 end
 
-function e.help(b)
-	for i, bx in ipairs(editor.buflist) do
-		if bx.filename == "*HELP*" then
-			editor.buf = bx; editor.bufindex = i
-			editor.fullredisplay(bx)
-			return
-		end
-	end -- help buffer not found, then build it.
-	local ll = {}
-	for l in editor.helptext:gmatch("(.-)\n") do table.insert(ll, l) end
-	return e.newbuffer(b, "*HELP*", ll)
-end--help
 
 function e.newbuffer(b, fname, ll)
 	ll = ll or { "" } -- default is a buffer with one empty line
@@ -1588,22 +1576,6 @@ editor.bindings_ctlx = {  -- ^X<key>
 	[62] = e.goeot,		-- ^X >	
 }--editor.bindings_ctlx
 	
-
-local function get_action(bindings, k, k2)
-	-- find action bound to k in bindings table.
-	-- if k is a prefix, use k2 or read it if not provided.
-	-- return action, k2, keyname if found, 
-	-- or nil, k2, keyname if not found
-	local kname = term.keyname(k)
-	local act = bindings[k] 
-	if act and type(act) == "table" then -- k is a prefix
-		k2 = k2 or editor.nextk()
-		kname = kname .. "-" .. term.keyname(k2)
-		act = act[k2]
-	end
-	return act, k2, kname
-end--get_action	
-
 local function editor_loadinitfile()
 	-- function to be executed before entering the editor loop
 	-- could be used to load a configuration/initialization file
@@ -1634,11 +1606,13 @@ local function editor_loop(ll, fname)
 	redisplay(editor.buf) -- adjust cursor to beginning of buffer
 	while not editor.quit do
 		local k = editor.nextk()
-		-- try first in buffer action table
-		local act, k2, kname = get_action(editor.buf.bindings, k)
-		if not act then -- try in the default editor table
-			act, k2, kname = get_action(editor.bindings, k, k2)
-		end
+		local kname = editor.keyname(k)
+		-- try to find an action bound to the key
+		-- first in buffer action table
+		-- then in the default editor table
+		local act = editor.buf.bindings
+			and editor.buf.bindings[k]
+			or editor.bindings[k] 
 		if act then 
 			msg(kname)
 			editor.lastresult = act(editor.buf)
