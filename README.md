@@ -4,9 +4,9 @@ A small, self-contained text editor for the Unix console or standard terminal em
 
 ### Objective
 
-Have a small, self-contained text editor that does not rely on any external library (no termcap, terminfo, ncurses, no POSIX libraries).
+PLE is a self-contained text editor that does not rely on any external library (no termcap, terminfo, ncurses, no POSIX libraries).
 
-This is not intended to compete with large established editors (emacs, vim) or smaller ones (joe, zile) or, for example in the Lua world, the sophisticated Textadept with a ncurse interface.  PLE is rather intended to be used with a statically compiled Lua in the sort of environment where busybox is usually found.
+This is not intended to compete with large established editors (emacs, vim) or even smaller ones (joe, zile).  PLE is rather intended to be used for example with a statically compiled Lua in the sort of environment where busybox is usually found.
 
 The editor is entirely written in Lua.  The only external dependencies are the terminal itself which must support basic ANSI sequences and the unix command `stty` which is used to save/restore the terminal mode, and set the terminal in raw mode (required to read keys one at a time).
 
@@ -24,9 +24,9 @@ The major limitations the brave tester should consider are:
 - the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
 - no automatic redimensioning of windows for X terminals 
-(no SIGWINCH handling - but the redisplay function (^L) ) can be invoke to refresh the screen to the new size)
+(no SIGWINCH handling - but the redisplay function (^L) ) can be invoked to refresh the screen to the new size)
 - no syntax coloring.
-- no clean API yet for extension modules ("modes" a la emacs, syntax coloring, etc.)
+- no complex support for extension modules ("modes" a la emacs, syntax coloring, etc.)
 - probably many others things that you would expect from a text editor!
 
 On the other hand, the editor already support:
