@@ -466,7 +466,7 @@ editor = {
 -- this is the same object as editor.buflist[editor.bufindex]
 -- make it global for extension modules (eg. ple_init.lua)
 --~ local buf = {}  
-buf = {}  
+editor.buf = {}  
 
 
 -- style functions
@@ -518,7 +518,7 @@ function editor.readchar(prompt, charpat)
 	-- return the key as a char only if it matches charpat
 	-- ignore all non printable ascii keys and non matching chars
 	editor.msg(prompt)
-	editor.redisplay(buf) -- ensure cursor stays in buf
+	editor.redisplay(editor.buf) -- ensure cursor stays in buf
 	while true do
 		k = editor.nextk()
 		if k == 7 then return nil end -- ^G - abort
@@ -544,17 +544,17 @@ end
 	
 
 function editor.statusline()
-	local s = strf("cur=%d,%d ", buf.ci, buf.cj)
-	if buf.si then s = s .. strf("sel=%d,%d ", buf.si, buf.sj) end
+	local s = strf("cur=%d,%d ", editor.buf.ci, editor.buf.cj)
+	if editor.buf.si then s = s .. strf("sel=%d,%d ", editor.buf.si, editor.buf.sj) end
 	-- uncomment the following for debug purposes
---~ 	s = s .. strf("li=%d ", buf.li)
---~ 	s = s .. strf("hs=%d ", buf.hs)
---~ 	s = s .. strf("ual=%d ", #buf.ual)
---~ 	s = s .. strf("buf=%d ", editor.bufindex)
+--~ 	s = s .. strf("li=%d ", editor.buf.li)
+--~ 	s = s .. strf("hs=%d ", editor.buf.hs)
+--~ 	s = s .. strf("ual=%d ", #editor.buf.ual)
+--~ 	s = s .. strf("editor.buf=%d ", editor.bufindex)
 	s = s .. strf(
 		"[%s] (%s) %s -- Help: ^X^H -- %s", 
-		buf.filename or "unnamed", 
-		buf.unsaved and "*" or "", 
+		editor.buf.filename or "unnamed", 
+		editor.buf.unsaved and "*" or "", 
 		editor.tabspaces and "SP" or "TAB", 
 		dbgs)
 	return s
@@ -741,9 +741,9 @@ function editor.fullredisplay()
 	--
 	-- regular layout
 	boxfill(editor.scrbox, ' ', style.normal)
-	buf.box = boxnew(2, 1, editor.scrl-2, editor.scrc)
-	buf.chgd = true
-	redisplay(buf)
+	editor.buf.box = boxnew(2, 1, editor.scrl-2, editor.scrc)
+	editor.buf.chgd = true
+	redisplay(editor.buf)
 end --fullredisplay
 
 editor.redisplay = redisplay
@@ -1316,8 +1316,8 @@ end
 function e.help(b)
 	for i, bx in ipairs(editor.buflist) do
 		if bx.filename == "*HELP*" then
-			buf = bx; editor.bufindex = i
-			editor.fullredisplay(b)
+			editor.buf = bx; editor.bufindex = i
+			editor.fullredisplay(bx)
 			return
 		end
 	end -- help buffer not found, then build it.
@@ -1332,9 +1332,9 @@ function e.newbuffer(b, fname, ll)
 	-- try to find the buffer if it already exists
 	for i, bx in ipairs(editor.buflist) do
 		if bx.filename == fname then
-			buf = bx; editor.bufindex = i
-			editor.fullredisplay(b)
-			return buf
+			editor.buf = bx; editor.bufindex = i
+			editor.fullredisplay(bx)
+			return bx
 		end
 	end
 	-- buffer doesn't exist. create it.
@@ -1345,16 +1345,16 @@ function e.newbuffer(b, fname, ll)
 	local bi = editor.bufindex + 1 
 	table.insert(editor.buflist, bi, bx) 
 	editor.bufindex = bi
-	buf = bx
+	editor.buf = bx
 	editor.fullredisplay()
-	return buf
+	return bx
 end
 
 function e.nextbuffer(b)
 	-- switch to next buffer
 	local bln = #editor.buflist
 	editor.bufindex = editor.bufindex % bln + 1
-	buf = editor.buflist[editor.bufindex]
+	editor.buf = editor.buflist[editor.bufindex]
 	editor.fullredisplay()
 end--nextbuffer
 
@@ -1364,7 +1364,7 @@ function e.prevbuffer(b)
 	-- if bufindex>1, the "previous" buffer index should be bufindex-1
 	-- if bufindex==1, the "previous" buffer index should be bln
 	editor.bufindex = (editor.bufindex - 2) % bln + 1
-	buf = editor.buflist[editor.bufindex]
+	editor.buf = editor.buflist[editor.bufindex]
 	editor.fullredisplay()
 end--nextbuffer
 
@@ -1413,8 +1413,8 @@ end--gotoline
 function e.help(b)
 	for i, bx in ipairs(editor.buflist) do
 		if bx.filename == "*HELP*" then
-			buf = bx; editor.bufindex = i
-			editor.fullredisplay(b)
+			editor.buf = bx; editor.bufindex = i
+			editor.fullredisplay(bx)
 			return
 		end
 	end -- help buffer not found, then build it.
@@ -1631,25 +1631,25 @@ local function editor_loop(ll, fname)
 	e.newbuffer(nil, fname, ll); 
 		-- 1st arg is current buffer (unused for newbuffer, so nil) 
 	msg(editor.initmsg)
-	redisplay(buf) -- adjust cursor to beginning of buffer
+	redisplay(editor.buf) -- adjust cursor to beginning of buffer
 	while not editor.quit do
 		local k = editor.nextk()
 		-- try first in buffer action table
-		local act, k2, kname = get_action(buf.bindings, k)
+		local act, k2, kname = get_action(editor.buf.bindings, k)
 		if not act then -- try in the default editor table
 			act, k2, kname = get_action(editor.bindings, k, k2)
 		end
 		if act then 
 			msg(kname)
-			editor.lastresult = act(buf)
+			editor.lastresult = act(editor.buf)
 		elseif (not k2) and ((k >= 32 and k < 127) 
 			or (k >= 160 and k < 256) 
 			or (k == 9)) then
-			editor.lastresult = e.insch(buf, k)
+			editor.lastresult = e.insch(editor.buf, k)
 		else
 			editor.msg(kname .. " not bound")
 		end
-	redisplay(buf)
+	redisplay(editor.buf)
 	end--while true
 end--editor_loop
 
