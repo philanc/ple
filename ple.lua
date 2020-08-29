@@ -1057,6 +1057,45 @@ function e.goleft(b, n)
 	return true
 end
 
+function e.nextword(b)
+	local l = e.getline(b)
+	local ci, cj, ln = e.getcur(b)
+	if cj >= #l and ci < ln then -- at eol and not at eot
+		e.godown(b); e.gohome(b)
+		return
+	end
+	local j = l:find("[%s%p][%w]", cj+1)
+	if j then 
+		e.setcur(b, ci, j) --before first word char
+		return true
+	end
+	e.goend(b)
+end--nextword
+
+function e.prevword(b)
+	local l = e.getline(b)
+	local ci, cj, ln = e.getcur(b)
+	local j = cj - 1
+	while true do
+		if j == 0 then 
+			e.gohome(b)
+			return
+		elseif j <= 0 then
+			if ci > 1 then 
+				e.goup(b); e.goend(b)
+			else
+				e.gohome(b)
+			end
+			return
+		end
+		if l:match("^[%s%p][%w]", j) then
+			e.setcur(b, ci, j) --before first word char
+			return true
+		end
+		j = j - 1
+	end
+end--prevword
+
 function e.pgdn(b) 
 	b:setcur(b.ci + b.box.l - 2, b.cj)
 end
@@ -1064,6 +1103,8 @@ end
 function e.pgup(b) 
 	b:setcur(b.ci - b.box.l - 2, b.cj)
 end
+
+
 
 function e.del(b)
 	-- if selection, delete it. Else, delete char
@@ -1512,13 +1553,13 @@ editor.bindings = { -- actions binding for text edition
 	[4] = e.del,		-- ^D
 	[5] = e.goend,		-- ^E
 	[6] = e.goright,	-- ^F
-	[7] = e.cancel,		-- ^G (do nothing, cancel selection)
+	[7] = e.cancel,		-- ^G 
 	[8] = e.bksp,		-- ^H
 	[9] = e.tab,		-- ^I
-	--[10]		-- ^J
-	--[11] 		-- ^K
+	[10] = e.prevword,	-- ^J
+	[11] = e.nextword,	-- ^K
 	[12] = e.redisplay,	-- ^L
-	[13] = e.nl,		-- ^M (insert newline)
+	[13] = e.nl,		-- ^M (return)
 	[14] = e.godown,	-- ^N
 	[15] = e.outbuffer,  	-- ^O
 	[16] = e.goup,		-- ^P
