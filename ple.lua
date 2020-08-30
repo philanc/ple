@@ -1319,10 +1319,6 @@ function e.redo(b)
 	b:op_redo(b.ual[b.ualtop])
 end--redo
 
-function e.quiteditor(b)
-	editor.quit = true
-end
-
 function e.exiteditor(b)
 	local anyunsaved = false
 	for i, bx in ipairs(editor.buflist) do 
@@ -1563,7 +1559,7 @@ editor.bindings = { -- actions binding for text edition
 	[14] = e.godown,	-- ^N
 	[15] = e.outbuffer,  	-- ^O
 	[16] = e.goup,		-- ^P
-	[17] = e.quiteditor,	-- ^Q
+	-- [17] = 	-- ^Q
 	[18] = e.searchagain,	-- ^R
 	[19] = e.search,	-- ^S
 	[20] = e.test,		-- ^T
