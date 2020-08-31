@@ -7,9 +7,8 @@ editor actions:	see table editor.action
 key bindings:	see table editor.bindings
 
 configuration:
-the editor can be configured / customized with a Lua file loaded at
-initialization. The configuration file is looked for in sequence at the 
-following locations:
+The editor can be customized with a Lua file loaded at initialization. 
+The configuration file is looked for in sequence at the following locations:
 	- the file which pathname is in the environment variable PLE_INIT
 	- ./ple_init.lua
 	- ~/.config/ple/ple_init.lua
@@ -62,65 +61,13 @@ local function fileexists(fn)
 end
 
 ------------------------------------------------------------------------
--- term:  module plterm is preloaded below to enable delivering
---        ple as a single file
+-- plterm - Pure Lua ANSI Terminal functions - unix only
+--
+--   module plterm is preloaded below to enable delivering
+--   ple as a single file. See module and documentation at
+--   https://github.com/philanc/plterm	
 
 package.preload.plterm = function()
---[[  
-
-plterm - Pure Lua ANSI Terminal functions - unix only
-
-This module assumes the tty is in raw mode. 
-It provides functions based on stty (so available on unix) 
-to save, set and restore tty modes.
-
-Module functions:
-
-clear()     -- clear screen
-cleareol()  -- clear to end of line
-golc(l, c)  -- move the cursor to line l, column c
-up(n)
-down(n)
-right(n)
-left(n)     -- move the cursor by n positions (default to 1)
-color(f, b, m)  
-            -- change the color used to write characters
-		(foreground color, background color, modifier)
-		see term.colors
-hide()
-show()      -- hide or show the cursor
-save()
-restore()   -- save and restore the position of the cursor
-reset()     -- reset the terminal (colors, cursor position)
-
-input()     -- input iterator (coroutine-based)
-		return a "next key" function that can be iteratively called 
-		to read a key (escape sequences returned by function keys 
-		are parsed)
-rawinput()  -- same, but escape sequences are not parsed.
-getcurpos() -- return the current position of the cursor
-getscrlc()  -- return the dimensions of the screen 
-               (number of lines and columns)
-keyname()   -- return a printable name for any key
-		- key names in term.keys for function keys,
-		- control characters are represented as "^A"
-		- the character itself for other keys
-
-tty mode management functions
-
-setrawmode()       -- set the terminal in raw mode
-setsanemode()      -- set the terminal in a default "sane mode"
-savemode()         -- get the current mode as a string
-restoremode(mode)  -- restore a mode saved by savemode()
-
-License: BSD
-https://github.com/philanc/plterm
-
--- just in case, a good ref on ANSI esc sequences:   
-https://en.wikipedia.org/wiki/ANSI_escape_code
-(in the text, "CSI" is "<esc>[")
-
-]]
 
 -- some local definitions
 
@@ -454,8 +401,6 @@ editor = {
 
 -- buf is the current buffer
 -- this is the same object as editor.buflist[editor.bufindex]
--- make it global for extension modules (eg. ple_init.lua)
---~ local buf = {}  
 editor.buf = {}  
 
 
