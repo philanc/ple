@@ -19,6 +19,11 @@ The first file found, if any, is loaded.
 ]]
 
 -- some local definitions (used by the module term and/or by the editor
+local function floor_division(a,b)
+	local res = math.floor(a/b)
+	if res < 0 then res = res - 1 end
+	return res
+end
 
 local strf = string.format
 local byte, char, rep = string.byte, string.char, string.rep
@@ -575,7 +580,7 @@ local function adjcursor(buf)
 	if buf.ci < buf.li or buf.ci >= buf.li+bl then 
 		-- cursor has moved out of box.
 		-- set li so that ci is in the middle of the box
-		buf.li = max(1, buf.ci-bl//2) 
+		buf.li = max(1, floor_division(buf.ci-bl,2))
 		buf.chgd = true
 	end
 	local cx = buf.ci - buf.li + 1
