@@ -68,27 +68,24 @@ end
 --   https://github.com/philanc/plterm	
 
 package.preload.plterm = function()
+-- content of file plterm.lua (see URL above) is included here.
+
 
 -- some local definitions
 
-local strf = string.format
-local byte, char, rep = string.byte, string.char, string.rep
-local yield = coroutine.yield
-
-local repr = function(x) return strf("%q", tostring(x)) end
-
+local byte, char, yield = string.byte, string.char, coroutine.yield
 
 ------------------------------------------------------------------------
 
 local out = io.write
 
-local function outf(...) 
+local function outf(...)
 	-- write arguments to stdout, then flush.
 	io.write(...); io.flush()
 end
 
 -- following definitions (from term.clear to term.restore) are
--- based on public domain code by Luiz Henrique de Figueiredo 
+-- based on public domain code by Luiz Henrique de Figueiredo
 -- http://lua-users.org/lists/lua-l/2009-12/msg00942.html
 
 local term={ -- the plterm module
@@ -102,10 +99,10 @@ local term={ -- the plterm module
 	down = function(n) out("\027[",n or 1,"B") end,
 	right = function(n) out("\027[",n or 1,"C") end,
 	left = function(n) out("\027[",n or 1,"D") end,
-	color = function(f,b,m) 
+	color = function(f,b,m)
 	    if m then out("\027[",f,";",b,";",m,"m")
 	    elseif b then out("\027[",f,";",b,"m")
-	    else out("\027[",f,"m") end 
+	    else out("\027[",f,"m") end
 	end,
 	-- hide / show cursor
 	hide = function() out("\027[?25l") end,
@@ -120,7 +117,7 @@ local term={ -- the plterm module
 term.colors = {
 	default = 0,
 	-- foreground colors
-	black = 30, red = 31, green = 32, yellow = 33, 
+	black = 30, red = 31, green = 32, yellow = 33,
 	blue = 34, magenta = 35, cyan = 36, white = 37,
 	-- backgroud colors
 	bgblack = 40, bgred = 41, bggreen = 42, bgyellow = 43,
@@ -165,7 +162,7 @@ local keys = term.keys
 --special chars (for parsing esc sequences)
 local ESC, LETO, LBR, TIL= 27, 79, 91, 126  --  esc, [, ~
 
-local isdigitsc = function(c) 
+local isdigitsc = function(c)
 	-- return true if c is the code of a digit or ';'
 	return (c >= 48 and c < 58) or c == 59
 end
@@ -213,7 +210,7 @@ local seq = {
 
 	['OH'] = keys.khome, --vte
 	['OF'] = keys.kend,  --vte
-	
+
 }
 
 local getcode = function() return byte(io.read(1)) end
@@ -229,9 +226,9 @@ term.input = function()
 		while true do
 			c = getcode()
 			if c ~= ESC then -- not a seq, yield c
-				yield(c) 
+				yield(c)
 				goto continue
-			end 
+			end
 			c1 = getcode()
 			if c1 == ESC then -- esc esc [ ... sequence
 				yield(ESC)
@@ -247,7 +244,7 @@ term.input = function()
 			if c2 == LBR then -- esc[[x sequences (F1-F5 in linux console)
 				s = s .. char(getcode())
 			end
-			if seq[s] then 
+			if seq[s] then
 				yield(seq[s])
 				goto continue
 			end
@@ -258,7 +255,7 @@ term.input = function()
 			while true do
 				ci = getcode()
 				s = s .. char(ci)
-				if ci == TIL then 
+				if ci == TIL then
 					if seq[s] then
 						yield(seq[s])
 						goto continue
@@ -290,7 +287,7 @@ term.rawinput = function()
 		local c
 		while true do
 			c = getcode()
-			yield(c) 
+			yield(c)
 		end
 	end)--coroutine
 end--rawinput()
@@ -299,7 +296,7 @@ term.getcurpos = function()
 	-- return current cursor position (line, column as integers)
 	--
 	outf("\027[6n") -- report cursor position. answer: esc[n;mR
-	local c, i = 0, 0
+	local i, c = 0
 	local s = ""
 	c = getcode(); if c ~= ESC then return nil end
 	c = getcode(); if c ~= LBR then return nil end
@@ -326,7 +323,7 @@ term.getscrlc = function()
 end
 
 term.keyname = function(c)
-	for k, v in pairs(keys) do 
+	for k, v in pairs(keys) do
 		if c == v then return k end
 	end
 	if c < 32 then return "^" .. char(c+64) end
@@ -341,7 +338,7 @@ end
 
 -- use the following to define a non standard stty location
 -- eg.:  stty = "/opt/busybox/bin/stty"
--- 
+--
 local stty = "stty" -- use the default stty
 
 term.setrawmode = function()
@@ -352,9 +349,16 @@ term.setsanemode = function()
 	return os.execute(stty .. " sane")
 end
 
+-- the string meaning that file:read() should return all the
+-- content of the file is "*a"  for Lua 5.0-5.2 and LuaJIT, 
+-- and "a" for more recent Lua versions 
+-- thanks to Phil Hagelberg for the heads up.
+--
+local READALL = (_VERSION < "Lua 5.3") and "*a" or "a" 
+
 term.savemode = function()
 	local fh = io.popen(stty .. " -g")
-	local mode = fh:read('a')
+	local mode = fh:read(READALL)
 	local succ, e, msg = fh:close()
 	return succ and mode or nil, e, msg
 end
@@ -363,11 +367,13 @@ term.restoremode = function(mode)
 	return os.execute(stty .. " " .. mode)
 end
 
-return term 
+return term
+-- end of file plterm.lua
 
-end --package.preload.plterm
+end --package.preload.plterm()
 
-local term = require "plterm"
+-- now, require the plterm module preloaded above
+local term = require "plterm"  
 
 
 ------------------------------------------------------------------------
@@ -575,7 +581,8 @@ local function adjcursor(buf)
 	if buf.ci < buf.li or buf.ci >= buf.li+bl then 
 		-- cursor has moved out of box.
 		-- set li so that ci is in the middle of the box
-		buf.li = max(1, buf.ci-bl//2) 
+		--   replaced '//' with floor() - thx to Thijs Schreijer
+		buf.li = max(1, math.floor(buf.ci-bl/2)) 
 		buf.chgd = true
 	end
 	local cx = buf.ci - buf.li + 1
