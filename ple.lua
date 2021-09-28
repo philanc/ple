@@ -1,4 +1,4 @@
--- Copyright (c) 2019  Phil Leblanc  -- see LICENSE file
+-- Copyright (c) 2021  Phil Leblanc  -- see LICENSE file
 
 ------------------------------------------------------------------------
 --[[  ple - a Pure Lua Editor
@@ -1457,6 +1457,7 @@ Cursor movement
 	^A, ^E		go to beginning, end of line
 	^B, ^F		go backward, forward
 	^N, ^P		go to next line, previous line
+	^K, ^J		go to next word, previous word
 	^U, ^V		page up, page down
 	^X<		go to beginning of buffer
 	^X> 		go to end of buffer
@@ -1632,7 +1633,6 @@ local function main()
 	term.left(999); term.down(999)
 	style.normal()
 	flush()
-	--~ 	ln.setmode(omode)
 	term.restoremode(prevmode)
 	if not ok then -- display traceback in case of error
 		print(msg)
