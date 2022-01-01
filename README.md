@@ -2,6 +2,12 @@
 
 A small, self-contained text editor for the Unix console or standard terminal emulators. 
 
+### Recent changes
+
+***UTF-8 encoding*** - PLE was initially designed to support only 8-bit character encodings (eg. pure ASCII,  Latin1, ISO-8859-x).  The latest release supporting 8-bit character encodings is  [v0.3-8bit-chars](https://github.com/philanc/ple/releases/tag/v0.3).  
+
+PLE has been modified to support UTF-8 encoding, which is nowdays the standard encoding to support both 7-bit pure ASCII and Unicode text files.  8-bit character encodings are no longer supported.
+
 ### Objective
 
 PLE is a self-contained text editor that does not rely on any external library (no termcap, terminfo, ncurses, no POSIX libraries).
@@ -16,11 +22,7 @@ PLE has been inspired by Antirez' [Kilo](https://github.com/antirez/kilo) editor
 
 ### Limitations
 
-PLE is ***Work in Progress***! It is not intended to be used for anything serious, at least for the moment.
-
-The major limitations the brave tester should consider are:
-- no UTF8 support. PLE displays 1-byte characters, and only the printable characters (code 32-126 and 160-255). Others characters are displayed as a centered dot (code 183).
-- no word- or sentence- or paragraph-based movement.
+- no sentence- or paragraph-based movement.
 - the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
 - no automatic redimensioning of windows for X terminals 
@@ -35,7 +37,7 @@ On the other hand, the editor already support:
 - basic search and replace functions (plain text only)
 - support for long lines (horizontal scroll, no provision for wrapping long lines)
 - selection, selection highlight, cut and paste (mark, wipe and yank in emacs parlance)
-- crude undo/redo functions
+- unlimited undo/redo functions
 - multiple buffers (but just one window at a time for the moment)
 - read, write, save files.
 - a minimal help command (F1 or ^X^H - give a short description of the basic bindings)
@@ -55,7 +57,7 @@ A sample `ple_init.lua` file is provided. It defines an editor command to execut
 
 --
 
-At the moment, the complete editor is ~40KB. It has been tested on xterm, rxvt, vte-based terminals, and the Linux console. 
+At the moment, the complete editor is ~50KB. It has been tested on xterm, rxvt, vte-based terminals, and the Linux console. 
 
 As they say, *it works on my PC...*
 
@@ -115,17 +117,11 @@ Misc.
 
 The `term` module includes all the basic functionnalities to display strings in various colors, move the cursor, erase lines and read keys.
 
-This module is embedded at the beginning of the ple.lua file. It does not use any other external library.  The only reason for embedding it within ple.lua is to deliver the editor as a single lua file.
+It is included here. To make it available for other applications, it is also distributed as a separate module. See the [plterm](https://github.com/philanc/plterm) repository.
 
-To make it available for other applications, it is also distributed as a separate module. See the [plterm](https://github.com/philanc/plterm) repository.
+It does not use ncurses, terminfo or termcap. It uses only very common ANSI sequences that are supported by (at least) the Linux console, xterm, rxvt and vte-based terminal emulators.
 
-Like [linenoise](https://github.com/antirez/linenoise), it does not use ncurses, terminfo or termcap. It uses only very common ANSI sequences that are supported by (at least) the Linux console, xterm, rxvt and vte-based terminal emulators.
-
-The term module includes some code [contributed](http://lua-users.org/lists/lua-l/2009-12/msg00937.html) by Luiz Henrique de Figueiredo on the Lua mailing list some time ago.
-
-I added some functions for input, getting the cursor position or the screen dimension, and stty-based mode handling .
-
-The input function reads and parses the escape sequences sent by function keys (arrows, F1-F12, insert, delete, etc.). See the definitions in `term.keys`.
+The input function reads and parses UTF-8 character sequences and the escape sequences sent by function keys (arrows, F1-F12, insert, delete, etc.). See the definitions in `term.keys`.
 
 
 Term functions: - see [plterm](https://github.com/philanc/plterm)

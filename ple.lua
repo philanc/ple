@@ -1,6 +1,7 @@
--- Copyright (c) 2021  Phil Leblanc  -- see LICENSE file
+-- Copyright (c) 2022  Phil Leblanc  -- see LICENSE file
 
 ------------------------------------------------------------------------
+
 --[[  ple - a Pure Lua Editor
 
 editor actions:	see table editor.action
@@ -19,6 +20,11 @@ The first file found, if any, is loaded.
 ]]
 
 -- some local definitions (used by the module term and/or by the editor
+
+local utf8 = require "utf8"
+local ulen = utf8.len
+local uoff = utf8.offset
+local uchar = utf8.char
 
 local strf = string.format
 local byte, char, rep = string.byte, string.char, string.rep
@@ -46,7 +52,12 @@ local function readfile(fn)
 	local fh, errm = io.open(fn)
 	if not fh then return nil, errm end
 	local ll = {}
-	for l in fh:lines() do table.insert(ll, l) end
+	for l in fh:lines() do 
+		if not ulen(l) then
+			return nil, "File error: invalid UTF8 sequence"
+		end
+		table.insert(ll, l)
+	end
 	fh:close()
 	-- ensure the list has at least an empty line
 	if #ll == 0 then table.insert(ll, "") end
@@ -63,320 +74,12 @@ local function fileexists(fn)
 end
 
 ------------------------------------------------------------------------
+
 -- plterm - Pure Lua ANSI Terminal functions - unix only
---
---   module plterm is preloaded below to enable delivering
---   ple as a single file. See module and documentation at
---   https://github.com/philanc/plterm
-
-package.preload.plterm = function()
--- content of file plterm.lua (see URL above) is included here.
-
-
--- some local definitions
-
-local byte, char, yield = string.byte, string.char, coroutine.yield
-
-------------------------------------------------------------------------
-
-local out = io.write
-
-local function outf(...)
-	-- write arguments to stdout, then flush.
-	io.write(...); io.flush()
-end
-
--- following definitions (from term.clear to term.restore) are
--- based on public domain code by Luiz Henrique de Figueiredo
--- http://lua-users.org/lists/lua-l/2009-12/msg00942.html
-
-local term={ -- the plterm module
-
-	out = out,
-	outf = outf,
-	clear = function() out("\027[2J") end,
-	cleareol = function() out("\027[K") end,
-	golc = function(l,c) out("\027[",l,";",c,"H") end,
-	up = function(n) out("\027[",n or 1,"A") end,
-	down = function(n) out("\027[",n or 1,"B") end,
-	right = function(n) out("\027[",n or 1,"C") end,
-	left = function(n) out("\027[",n or 1,"D") end,
-	color = function(f,b,m)
-	    if m then out("\027[",f,";",b,";",m,"m")
-	    elseif b then out("\027[",f,";",b,"m")
-	    else out("\027[",f,"m") end
-	end,
-	-- hide / show cursor
-	hide = function() out("\027[?25l") end,
-	show = function() out("\027[?25h") end,
-	-- save/restore cursor position
-	save = function() out("\027[s") end,
-	restore = function() out("\027[u") end,
-	-- reset terminal (clear and reset default colors)
-	reset = function() out("\027c") end,
-}
-
-term.colors = {
-	default = 0,
-	-- foreground colors
-	black = 30, red = 31, green = 32, yellow = 33,
-	blue = 34, magenta = 35, cyan = 36, white = 37,
-	-- backgroud colors
-	bgblack = 40, bgred = 41, bggreen = 42, bgyellow = 43,
-	bgblue = 44, bgmagenta = 45, bgcyan = 46, bgwhite = 47,
-	-- attributes
-	reset = 0, normal= 0, bright= 1, bold = 1, reverse = 7,
-}
-
-------------------------------------------------------------------------
--- key input
-
-term.keys = { -- key code definitions
-	unknown = 0x10000,
-	esc = 0x1b,
-	del = 0x7f,
-	kf1 = 0xffff,  -- 0xffff-0
-	kf2 = 0xfffe,  -- 0xffff-1
-	kf3 = 0xfffd,  -- ...
-	kf4 = 0xfffc,
-	kf5 = 0xfffb,
-	kf6 = 0xfffa,
-	kf7 = 0xfff9,
-	kf8 = 0xfff8,
-	kf9 = 0xfff7,
-	kf10 = 0xfff6,
-	kf11 = 0xfff5,
-	kf12 = 0xfff4,
-	kins  = 0xfff3,
-	kdel  = 0xfff2,
-	khome = 0xfff1,
-	kend  = 0xfff0,
-	kpgup = 0xffef,
-	kpgdn = 0xffee,
-	kup   = 0xffed,
-	kdown = 0xffec,
-	kleft = 0xffeb,
-	kright = 0xffea,
-}
-
-local keys = term.keys
-
---special chars (for parsing esc sequences)
-local ESC, LETO, LBR, TIL= 27, 79, 91, 126  --  esc, [, ~
-
-local isdigitsc = function(c)
-	-- return true if c is the code of a digit or ';'
-	return (c >= 48 and c < 58) or c == 59
-end
-
---ansi sequence lookup table
-local seq = {
-	['[A'] = keys.kup,
-	['[B'] = keys.kdown,
-	['[C'] = keys.kright,
-	['[D'] = keys.kleft,
-
-	['[2~'] = keys.kins,
-	['[3~'] = keys.kdel,
-	['[5~'] = keys.kpgup,
-	['[6~'] = keys.kpgdn,
-	['[7~'] = keys.khome,  --rxvt
-	['[8~'] = keys.kend,   --rxvt
-	['[1~'] = keys.khome,  --linux
-	['[4~'] = keys.kend,   --linux
-	['[11~'] = keys.kf1,
-	['[12~'] = keys.kf2,
-	['[13~'] = keys.kf3,
-	['[14~'] = keys.kf4,
-	['[15~'] = keys.kf5,
-	['[17~'] = keys.kf6,
-	['[18~'] = keys.kf7,
-	['[19~'] = keys.kf8,
-	['[20~'] = keys.kf9,
-	['[21~'] = keys.kf10,
-	['[23~'] = keys.kf11,
-	['[24~'] = keys.kf12,
-
-	['OP'] = keys.kf1,   --xterm
-	['OQ'] = keys.kf2,   --xterm
-	['OR'] = keys.kf3,   --xterm
-	['OS'] = keys.kf4,   --xterm
-	['[H'] = keys.khome, --xterm
-	['[F'] = keys.kend,  --xterm
-
-	['[[A'] = keys.kf1,  --linux
-	['[[B'] = keys.kf2,  --linux
-	['[[C'] = keys.kf3,  --linux
-	['[[D'] = keys.kf4,  --linux
-	['[[E'] = keys.kf5,  --linux
-
-	['OH'] = keys.khome, --vte
-	['OF'] = keys.kend,  --vte
-
-}
-
-local getcode = function() return byte(io.read(1)) end
-
-term.input = function()
-	-- return a "read next key" function that can be used in a loop
-	-- the "next" function blocks until a key is read
-	-- it returns ascii code for all regular keys, or a key code
-	-- for special keys (see term.keys)
-	-- (this function assume the tty is already in raw mode)
-	return coroutine.wrap(function()
-		local c, c1, c2, ci, s
-		while true do
-			c = getcode()
-			if c ~= ESC then -- not a seq, yield c
-				yield(c)
-				goto continue
-			end
-			c1 = getcode()
-			if c1 == ESC then -- esc esc [ ... sequence
-				yield(ESC)
-				-- here c still contains ESC, read a new c1
-				c1 = getcode() -- and carry on ...
-			end
-			if c1 ~= LBR and c1 ~= LETO then -- not a valid seq
-				yield(c) ; yield(c1)
-				goto continue
-			end
-			c2 = getcode()
-			s = char(c1, c2)
-			if c2 == LBR then -- esc[[x sequences (F1-F5 in linux console)
-				s = s .. char(getcode())
-			end
-			if seq[s] then
-				yield(seq[s])
-				goto continue
-			end
-			if not isdigitsc(c2) then
-				yield(c) ; yield(c1) ; yield(c2)
-				goto continue
-			end
-			while true do
-				ci = getcode()
-				s = s .. char(ci)
-				if ci == TIL then
-					if seq[s] then
-						yield(seq[s])
-						goto continue
-					else
-						-- valid but unknown sequence - ignore it
-						yield(keys.unknown)
-						goto continue
-					end
-				end
-				if not isdigitsc(ci) then
-					-- not a valid seq. return all the chars
-					yield(ESC)
-					for i = 1, #s do yield(byte(s, i)) end
-					goto continue
-				end
-			end--while
-			-- assume c is a regular char, return its ascii code
-			::continue::
-		end
-	end)--coroutine
-end--input()
-
-term.rawinput = function()
-	-- return a "read next key" function that can be used in a loop
-	-- the "next" function blocks until a key is read
-	-- it returns ascii code for all keys
-	-- (this function assume the tty is already in raw mode)
-	return coroutine.wrap(function()
-		local c
-		while true do
-			c = getcode()
-			yield(c)
-		end
-	end)--coroutine
-end--rawinput()
-
-term.getcurpos = function()
-	-- return current cursor position (line, column as integers)
-	--
-	outf("\027[6n") -- report cursor position. answer: esc[n;mR
-	local i, c = 0
-	local s = ""
-	c = getcode(); if c ~= ESC then return nil end
-	c = getcode(); if c ~= LBR then return nil end
-	while true do
-		i = i + 1
-		if i > 8 then return nil end
-		c = getcode()
-		if c == byte'R' then break end
-		s = s .. char(c)
-	end
-	-- here s should be n;m
-	local n, m = s:match("(%d+);(%d+)")
-	if not n then return nil end
-	return tonumber(n), tonumber(m)
-end
-
-term.getscrlc = function()
-	-- return current screen dimensions (line, coloumn as integers)
-	term.save()
-	term.down(999); term.right(999)
-	local l, c = term.getcurpos()
-	term.restore()
-	return l, c
-end
-
-term.keyname = function(c)
-	for k, v in pairs(keys) do
-		if c == v then return k end
-	end
-	if c < 32 then return "^" .. char(c+64) end
-	if c < 256 then return char(c) end
-	return tostring(c)
-end
-
-------------------------------------------------------------------------
--- poor man's tty mode management, based on stty
--- (better use slua linenoise extension if available)
-
-
--- use the following to define a non standard stty location
--- eg.:  stty = "/opt/busybox/bin/stty"
---
-local stty = "stty" -- use the default stty
-
-term.setrawmode = function()
-	return os.execute(stty .. " raw -echo 2> /dev/null")
-end
-
-term.setsanemode = function()
-	return os.execute(stty .. " sane")
-end
-
--- the string meaning that file:read() should return all the
--- content of the file is "*a"  for Lua 5.0-5.2 and LuaJIT,
--- and "a" for more recent Lua versions
--- thanks to Phil Hagelberg for the heads up.
---
-local READALL = (_VERSION < "Lua 5.3") and "*a" or "a"
-
-term.savemode = function()
-	local fh = io.popen(stty .. " -g")
-	local mode = fh:read(READALL)
-	local succ, e, msg = fh:close()
-	return succ and mode or nil, e, msg
-end
-
-term.restoremode = function(mode)
-	return os.execute(stty .. " " .. mode)
-end
-
-return term
--- end of file plterm.lua
-
-end --package.preload.plterm()
-
--- now, require the plterm module preloaded above
 local term = require "plterm"
 
+-- buffer - a module handling text as a list of strings
+local buffer = require "buffer"
 
 ------------------------------------------------------------------------
 -- EDITOR
@@ -389,18 +92,20 @@ local out, outf = term.out, term.outf
 local col, keys = term.colors, term.keys
 local flush = io.flush
 
-
 ------------------------------------------------------------------------
 -- global objects and constants
 
+local MAX = buffer.MAX
+
 local tabln = 8
-local EOL = char(187) -- >>, indicate more undisplayed chars in s
-local NDC = char(183) -- middledot, used for non-displayable latin1 chars
-local EOT = '~'  -- used to indicate that we are past the end of text
+local EOT = '~'   -- used to indicate that we are past the end of text
+NDC=uchar(0xfffd) -- indicates a non-displayable character
+EOL=uchar(0xbb)   -- (Right-pointing Double Angle Quotation Mark)
+		  -- indicates that the line is longer than what is displayed
 
 -- editor is the global editor object
 editor = {
-	quit = false, -- set to true to quit editor_loop()
+	quit = false, -- set editor.quit to true to quit editor_loop()
 	nextk = term.input(), -- the "read next key" function
 	keyname = term.keyname, -- return the displayable name of a key
 	buflist = {},  -- list of buffers
@@ -410,7 +115,6 @@ editor = {
 -- buf is the current buffer
 -- this is the same object as editor.buflist[editor.bufindex]
 editor.buf = {}
-
 
 -- style functions
 
@@ -424,7 +128,6 @@ editor.style = {
 
 local style = editor.style
 
-
 -- dialog functions
 
 function editor.msg(m)
@@ -436,20 +139,24 @@ end
 
 function editor.readstr(prompt)
 	-- display prompt, read a string on the last screen line
-	-- [read only ascii or latin1 printable chars - no tab]
+	-- [read only utf8 printable chars - no tab or other control-chars]
 	-- [ no edition except bksp ]
 	-- if ^G then return nil
 	local s = ""
 	editor.msg(prompt)
 	while true do
-		go(editor.scrl, #prompt+1); cleareol(); outf(s)	-- display s
+		-- display s
+		go(editor.scrl, ulen(prompt)+1)cleareol(); outf(s)
 		k = editor.nextk()
-		if (k >= 32 and k <127) or (k >=160 and k < 256) then
-			s = s .. char(k)
-		elseif k == 8 or k == keys.del then -- backspace
-			s = s:sub(1, -2)
+		-- ignore ctrl-chars and function keys
+		if k == 8 or k == keys.del then -- backspace
+			if ulen(s) > 0 then
+				s = s:sub(1, uoff(s, -1) - 1)
+			end
 		elseif k == 13 then return s  -- return
 		elseif k == 7 then return nil -- ^G - abort
+		elseif (k >= 32 and k < 0xffea) or (k > 0xffff) then
+			s = s .. uchar(k)
 		else -- ignore all other keys
 		end
 	end--while
@@ -465,10 +172,13 @@ function editor.readchar(prompt, charpat)
 	while true do
 		k = editor.nextk()
 		if k == 7 then return nil end -- ^G - abort
-		if (k < 127) then
-			local ch = char(k)
-			if ch:match(charpat) then return ch end
-		end
+--~ 		if (k < 127) then
+--~ 			local ch = char(k)
+--~ 			if ch:match(charpat) then return ch end
+--~ 		end
+		
+		local ch = uchar(k)
+		if ch:match(charpat) then return ch end
 		-- ignore all other keys
 	end--while
 end --readkey
@@ -530,12 +240,12 @@ end
 -- line display
 
 local function ccrepr(b, j)
-	-- return display representation of char with code b
+	-- return display representation of unicode char with code b
 	-- at line offset j (j is used for tabs)
 	local s
 	if b == 9 then s = rep(' ', tabln - j % tabln)
-	elseif (b >= 127 and b <160) or (b < 32) then s = NDC
-	else s = char(b)
+	elseif (b < 32) then s = NDC
+	else s = uchar(b)
 	end--if
 	return s
 end --ccrepr
@@ -543,22 +253,30 @@ end --ccrepr
 local function boxline(b, hs, bl, l, insel, jon, joff)
 	-- display line l at the bl-th line of box b,
 	-- with horizontal scroll hs
-	-- if s is tool long for the box, return the
+	-- if s is too long for the box, return the
 	-- index of the first undisplayed char in l
 	-- insel: true if line start is in the selection
 	-- jon: if defined and not insel, position of beg of selection
 	-- joff: if defined, position of end of selection
+	assert(ulen(l), "invalid UTF8 sequence")
 	local bc = b.c
 	local cc = 0 --curent col in box
 	-- clear line (don't use cleareol - box maybe smaller than screen)
 	go(b.x+bl-1, b.y); out(b.clrl)
 	go(b.x+bl-1, b.y)
 	if insel then style.sel() end
-	for j = 1, #l do
-		if (not insel) and j == jon+1 then style.sel(); insel=true end
-		if insel and j == joff+1 then style.normal() end
-		local chs = ccrepr(byte(l, j), cc)
-		cc = cc + #chs
+	local j = 0
+	for p, uc in utf8.codes(l) do
+		-- j = char position in line, p = byte position in string
+		j = j + 1  
+		if (not insel) and j == jon then 
+			style.sel(); insel=true 
+		end
+		if insel and j == joff then 
+			style.normal() 
+		end
+		local chs = ccrepr(uc, cc)
+		cc = cc + ulen(chs)
 		if cc >= bc + hs then
 			go(b.x+bl-1, b.y+b.c-1)
 			outf(EOL)
@@ -589,19 +307,18 @@ local function adjcursor(buf)
 	end
 	local cx = buf.ci - buf.li + 1
 	local cy = 1 -- box column index, ignoring horizontal scroll
+--~ 	local cy = 0 -- box column index, ignoring horizontal scroll
 	local col = buf.box.c
 	local l = buf.ll[buf.ci]
-	for j = 1, buf.cj do
-		local b = byte(l, j)
-		if not b then break end
-		if b == 9 then cy = cy + (tabln - (cy-1) % tabln)
-		else cy = cy + 1
+	local cj = 1
+	for p,c in utf8.codes(l) do
+		if cj == buf.cj then break end
+		cj = cj + 1
+		if c == 9 then 
+			cy = cy + (tabln - (cy-1) % tabln)
+		else
+			cy = cy + 1
 		end
---~ 		if cy > col then --don't move beyond the right of the box
---~ 			cy = col
---~ 			buf.cj = j
---~ 			break
---~ 		end
 	end
 	-- determine actual hs
 	local hs = 0 -- horizontal scroll
@@ -621,7 +338,8 @@ local function adjcursor(buf)
 	if buf.chgd then return end -- (li or hs or content change)
 	-- here, assume that cursor will move within the box
 	editor.status(editor.statusline())
-	go(buf.box.x + cx - 1, buf.box.y + cys - 1); flush()
+	go(buf.box.x + cx - 1, buf.box.y + cys - 1)
+	flush()
 end -- adjcursor
 
 
@@ -694,252 +412,6 @@ editor.redisplay = redisplay
 
 ------------------------------------------------------------------------
 -- BUFFER AND CURSOR MANIPULATION
---
--- 		use these functions instead of direct buf.ll manipulation.
--- 		This will make it easier to change or enrich the
--- 		representation later. (eg. syntax coloring, undo/redo, ...)
-
-buffer = {}; buffer.__index = buffer --buffer class
-
--- (note: 'b' is a buffer object in all functions below)
-
-
-function buffer.new(ll)
-	-- create and initialize a new buffer object
-	-- ll is a list of lines
-	local b = {
-	  ll=ll,	-- list of text lines
-	  ci=1, cj=0,	-- text cursor (line ci, offset cj)
-	  li=1,		-- index in ll of the line at the top of the box
-	  hs=0,		-- horizontal scroll (number of columns)
-	  chgd=true,	-- true if buffer has changed since last display
-	  unsaved=false,-- true if buffer content has changed since last save
-	  ual = {},	-- undo action list
-	  ualtop = 0,	-- current top of the undo list (~= #ual !! see undo)
-	  -- box: a rectangular region of the screen where the buffer
-	  --      is displayed (see boxnew() above)
-	  --      the box is assigned to the buffer by a layout function.
-	  --      for the moment, the layout is performed by the
-	  --      fullredisplay() function.
-	  bindings = {},	-- action table for this buffer (used by modes)
-	}
-	setmetatable(b, buffer)
-	return b
-end--new
-
-
--- various predicates and accessors
-
--- test if at end / beginning of  line  (eol, bol)
-function buffer.ateol(b) return b.cj >= #b.ll[b.ci] end
-function buffer.atbol(b) return b.cj <= 0 end
--- test if at  first or last line of text
-function buffer.atfirst(b) return (b.ci <= 1) end
-function buffer.atlast(b) return (b.ci >= #b.ll) end
--- test if at  end or beginning of  text (eot, bot)
-function buffer.ateot(b) return b:atlast() and b:ateol() end
-function buffer.atbot(b) return b:atfirst() and b:atbol() end
-
-function buffer.markbeforecur(b)
-	return (b.si < b.ci) or (b.si == b.ci and b.sj < b.cj)
-end
-
-function buffer.getcur(b) return b.ci, b.cj end
-function buffer.getsel(b) return b.si, b.sj end
-
-function buffer.geteol(b)
-	-- return coord of current end of line
-	local ci = b.ci
-	return ci, #b.ll[ci]
-end
-
-function buffer.getline(b, i)
-	-- return current line and cursor position in line
-	-- if i is provided, return line i
-	if i then return b.ll[i], 1 end
-	return b.ll[b.ci], b.cj
-end
-
-function buffer.getlines(b, di, dj)
-	-- return the text between the cursor and point (di, dj) as
-	-- a list of lines. this assumes that (di, dj) is after the cursor.
-	local ci, cj = b:getcur()
-	if di == ci then
-		return { b.ll[ci]:sub(cj+1, dj) }
-	end
-	local sl = {}
-	for i = ci, di do
-		local l = b.ll[i]
-		if i == ci then l = l:sub(cj+1) end
-		if i == di then l = l:sub(1, dj) end
-		table.insert(sl, l)
-	end
-	return sl
-end--getlines
-
-function buffer.gettext(b)
-	return table.concat(b.ll, '\n')
-end
-
--- cursor movement
-
-function buffer.setcurj(b, j) -- set cursor on the current line
-	local ci = b:getcur()
-	local ln = #b.ll[ci]
-	if not j or j > ln then j = ln end
-	if j < 0 then j = 0 end
-	b.cj = j
-	return j
-end
-
-function buffer.setcur(b, i, j) -- set cursor absolute
-	if not i or i > #b.ll then i = #b.ll end
-	if i < 1 then i = 1 end
-	if not j or j > #b.ll[i] then j = #b.ll[i] end
-	if j < 0 then j = 0 end
-	b.ci, b.cj = i, j
-	return i, j
-end
-
--- modification at cursor
--- all modifications should be performed by the following functions:
---   bufins(strlist)
---	insert list of string at cursor. if strlist is a string, it is
---	equivalent to a list with only one element
---	if buffer contains one line "abc" and cursor is between b and c
---	(ie screen cursor is on 'c') then
---	bufins{"xx"}  changes the buffer line to "abxxc"
---	bufins{"xx", "yy"}  now the buffer has two lines: "abxx", "yyc"
---	bufins{"", ""}  inserts a newline:   "ab", "c"
---
---   bufdel(di, dj)
---	delete all characters between the cursor and point (di, dj)
---	(bufdel assumes that di, dj is after the cursor)
---	if the buffer is  ("abxx", "yyc") and the cursor is just after 'b',
---	bufdel(2,2) changes the buffer to ("abc")
-
-
-local ualpush -- defined further down with all undo functions
-
-function buffer.bufins(b, sl, no_undo)
-	-- if no_undo is true, don't record the modification
-	local slc = {} -- dont push directly sl. make a copy.
-	if type(sl) == "string" then
-		slc[1] = sl
-	else
-		for i = 1, #sl do slc[i] = sl[i] end
-	end
-	if not no_undo then ualpush(b, 'ins', slc) end
-	local ci, cj = b:getcur()
-	local l = b.ll[ci]
-	local l1, l2 = l:sub(1,cj), l:sub(cj+1)
-	local s1 = nil
-	if type(sl) == "string" then	s1 = sl
-	elseif #sl == 1 then  s1 = sl[1]
-	end
-	if s1 then -- insert s1 in current line
-		b.ll[ci] = l1 .. s1 .. l2
-		b:setcur(ci, cj + #s1)
-	else -- several lines in sl
-		b.ll[ci] = l1 .. sl[1]
-		ci = ci + 1
-		for i = 2, #sl-1 do
-			table.insert(b.ll, ci, sl[i])
-			ci = ci + 1
-		end
-		local last = sl[#sl]
-		cj = #last
-		table.insert(b.ll, ci, last .. l2)
-		b:setcur(ci, cj)
-	end
-	b.chgd = true
-	b.unsaved = true
-	return true
-end--bufins
-
-function buffer.bufdel(b, di, dj, no_undo)
-	-- if no_undo is true, don't record the modification
-	if not no_undo then ualpush(b, 'del', b:getlines(di, dj)) end
-	local ci, cj = b:getcur()
-	local l1, l2 = b.ll[ci]:sub(1,cj), b.ll[di]:sub(dj+1)
-	if di == ci then -- delete in current line at cursor
-		b.ll[ci] = l1 .. l2
-	else -- delete several lines
-		local ci1 = ci + 1
-		for i = ci1, di do
-			-- the next line to remove is always the line at ci+1
-			table.remove(b.ll, ci1)
-		end
-		b.ll[ci] = l1 .. l2
-	end
-	b.chgd = true
-	b.unsaved = true
-	return true
-end--bufdel
-
-function buffer.settext(b, txt)
-	-- replace the buffer text
-	-- !! it cannot be undone and it clears the undo stack !!
-	-- the cursor and display are reinitialized at the top
-	-- of the new text.
-	buffer.undo_clearall(b)
-	b.ll = lines(txt)
-	b.chgd = true
-	b.unsaved = true
-	b.ci = 1 -- line index
-	b.cj = 0 -- cursor offset
-	b.li = 1 -- index of line at the top of the box
-	b.hs = 0 -- horizontal scroll
-	return true
-end--settext
-
-------------------------------------------------------------------------
--- undo functions
-
-function ualpush(b, op, sl)
-	-- push enough context to be able to undo a core operation (ins, del)
-	-- sl is always a list of lines
-	local top = #b.ual
-	if top > b.ualtop then -- remove the remaining redo actions
-		for i = top, b.ualtop+1, -1 do table.remove(b.ual, i) end
-		assert(#b.ual == b.ualtop)
-	end
-	local last = b.ual[top]
-
-	-- try to merge successive insch()
-
-	sl.op, sl.ci, sl.cj = op, b.ci, b.cj
-	table.insert(b.ual, sl)
-	b.ualtop = b.ualtop + 1
-	return
-end
-
-function buffer.op_undo(b, sl)
-	b:setcur(sl.ci, sl.cj)
-	if sl.op == "del" then
-		return b:bufins(sl, true)
-	elseif sl.op == "ins" then
-		return b:bufdel(sl.ci+#sl-1, sl.cj+#sl[#sl], true)
-	else
-		return nil, "unknown op"
-	end
-end
-
-function buffer.op_redo(b, sl)
-	b:setcur(sl.ci, sl.cj)
-	if sl.op == "ins" then
-		return b:bufins(sl, true)
-	elseif sl.op == "del" then
-		return b:bufdel(sl.ci+#sl-1, sl.cj+#sl[#sl], true)
-	else
-		return nil, "unknown op"
-	end
-end
-
-function buffer.undo_clearall(b)
-	b.ual = {}
-	b.ualtop = 0
-end
 
 
 ------------------------------------------------------------------------
@@ -960,94 +432,59 @@ end
 e.redisplay = editor.fullredisplay
 
 
-function e.gohome(b) b:setcurj(0) end
-function e.goend(b) b:setcurj() end
-function e.gobot(b) b:setcur(1, 0) end
-function e.goeot(b) b:setcur() end
+function e.gohome(b) b:movecur(0, -MAX) end
+function e.goend(b) b:movecur(0, MAX) end
+function e.gobot(b) b:setcur(1, 1) end
+function e.goeot(b) b:setcur(MAX, MAX) end
+function e.goup(b) b:movecur(-1, 0) end
+function e.godown(b) b:movecur(1, 0) end
 
-function e.goup(b, n)
-	n = n or 1
-	b:setcur(b.ci - n, b.cj)
+function e.goright(b)
+	return 	b:ateot() 
+		or b:ateol() and b:movecur(1, -MAX)
+		or b:movecur(0, 1)
 end
 
-function e.godown(b, n)
-	n = n or 1
-	b:setcur(b.ci + n, b.cj)
+function e.goleft(b)
+	return 	b:atbot() 
+		or b:atbol() and b:movecur(-1, MAX)
+		or b:movecur(0, -1)
 end
 
-function e.goright(b, n)
-	n = n or 1
-	local ln = #b.ll[b.ci]
-	while n > 0 do
-		b.cj = b.cj + 1
-		if b.cj > ln then -- goto beg of next line
-			b.ci = b.ci + 1
-			if b.ci > #b.ll then
-				e.goeot(b)
-				return false
-			end
-			ln = #b.ll[b.ci]
-			b.cj = 0
-		end
-		n = n - 1
-	end
-	return true
-end
-
-function e.goleft(b, n)
-	n = n or 1
-	while n > 0 do
-		b.cj = b.cj - 1
-		if b.cj < 0 then -- goto end of prev line
-			b.ci = b.ci - 1
-			if b.ci < 1 then
-				e.gobot(b)
-				return false
-			end
-			b.cj = #b.ll[b.ci]
-		end
-		n = n - 1
-	end
-	return true
+local function wordchar(u) -- used by nexword, prevword
+	-- return true if u is the code of a non-space char
+	return (u and u ~= 32 and u ~= 9)
 end
 
 function e.nextword(b)
-	local l = e.getline(b)
-	local ci, cj, ln = e.getcur(b)
-	if cj >= #l and ci < ln then -- at eol and not at eot
-		e.godown(b); e.gohome(b)
-		return
+	local inw1 = wordchar(b:curcode())
+	local inw2, u
+	while true do
+		e.goright(b)
+		if b:ateol() then break end
+		u = b:curcode()
+		if not u then e.goright(b); break end
+		inw2 = wordchar(u)
+		if (not inw1) and inw2 then break end
+		inw1 = inw2
 	end
-	local j = l:find("[%s%p][%w]", cj+1)
-	if j then
-		e.setcur(b, ci, j) --before first word char
-		return true
-	end
-	e.goend(b)
 end--nextword
 
 function e.prevword(b)
-	local l = e.getline(b)
-	local ci, cj, ln = e.getcur(b)
-	local j = cj - 1
+	e.goleft(b)
+	local inw1 = wordchar(b:curcode())
+	local inw2
+	local u
 	while true do
-		if j == 0 then
-			e.gohome(b)
-			return
-		elseif j <= 0 then
-			if ci > 1 then
-				e.goup(b); e.goend(b)
-			else
-				e.gohome(b)
-			end
-			return
-		end
-		if l:match("^[%s%p][%w]", j) then
-			e.setcur(b, ci, j) --before first word char
-			return true
-		end
-		j = j - 1
-	end
+		if b:ateol() then break end
+		e.goleft(b)
+		if b:atbol() then break end
+		u = b:curcode()
+		if not u then break end
+		inw2 = wordchar(u)
+		if inw1 and not inw2 then e.goright(b); break end
+		inw1 = inw2
+	end	
 end--prevword
 
 function e.pgdn(b)
@@ -1078,7 +515,7 @@ end
 function e.insch(b, k)
 	-- insert char with code k
 	-- (don't remove. used by editor loop)
-	return b:bufins(char(k))
+	return b:bufins(uchar(k))
 end
 
 function e.tab(b)
@@ -1096,7 +533,9 @@ function e.insert(b, x)
 	-- insert x at cursor
 	-- x can be a string or a list of lines (a table)
 	-- if x is a string, it may contain newlines ('\n')
-	return b:bufins((type(x) == "string") and lines(x) or x)
+	local r, errm = b:bufins((type(x) == "string") and lines(x) or x)
+	if not r then msg(errm); return nil, errm end
+	return true
 end
 
 function e.nl(b)
@@ -1116,15 +555,19 @@ function e.searchpattern(b, pat, plain)
 	-- is not moved and the function returns false.
 
 	local oci, ocj = b:getcur() -- save the original cursor position
+	e.goright(b)
 	while true do
-		local l, cj = b:getline()
-		local j = l:find(pat, cj+2, plain)
+		local l = b:getline()
+		local ci, cj = b:getcur()
+		local j = l:find(pat, uoff(l, cj), plain)
 		if j then --found
-			b:setcurj(j-1)
+			-- convert byte position into char index
+			cj = ulen(l, 1, j)
+			b:setcur(nil, cj)
 			return true
 		end -- found
 		if b:atlast() then break end
-		e.gohome(b); e.godown(b, 1)
+		e.gohome(b); e.godown(b)
 	end--while
 	-- not found
 	b:setcur(oci, ocj) -- restore cursor position
@@ -1437,16 +880,27 @@ function e.test(b)
 --~ 	s = s:upper()
 --~ 	b:settext(s)
 
+	do return  msg("str="..readstr("enter string: ")) end
+
+
+--~ 	local s = b:getline()
+--~ 	local ci,cj = b:getcur()
+--~ 	msg("==" .. uchar(utf8.codepoint(s, uoff(s, cj))))
+
+--~ 	msg("==" .. tostring(b:curch()))
+
 	-- test readchar
-	while true do
-		local ch = readchar("test readchar (space to quit): ", ".")
-		if not ch or ch == " " then msg("aborted!"); break
-		else
-			e.goeot(b); e.nl(b);
-			e.insert(b, strf("readchar => %d", byte(ch)))
-		end
-	end
-end--atest
+--~ 	while true do
+--~ 		local ch = readchar("test readchar (space to quit): ", ".")
+--~ 		if not ch or ch == " " then msg("aborted!"); break
+--~ 		else
+--~ 			e.goeot(b); e.nl(b);
+--~ 			e.insert(b, strf(
+--~ 			    "readchar => %d", utf8.codepoint(ch)
+--~ 			))
+--~ 		end
+--~ 	end
+end--test
 
 editor.helptext = [[
 
@@ -1583,7 +1037,7 @@ local function editor_loop(ll, fname)
 	local r = editor_loadinitfile()
 	style.normal()
 	e.newbuffer(nil, fname, ll);
-		-- 1st arg is current buffer (unused for newbuffer, so nil)
+	  -- 1st arg is current buffer (unused for newbuffer, so nil)
 	msg(editor.initmsg)
 	redisplay(editor.buf) -- adjust cursor to beginning of buffer
 	while not editor.quit do
@@ -1598,15 +1052,13 @@ local function editor_loop(ll, fname)
 		if act then
 			msg(kname)
 			editor.lastresult = act(editor.buf)
-		elseif (not k2) and ((k >= 32 and k < 127)
-			or (k >= 160 and k < 256)
-			or (k == 9)) then
+		elseif (k >= 32) and (k > 0xffff or k < 0xffea) then
 			editor.lastresult = e.insch(editor.buf, k)
 		else
 			editor.msg(kname .. " not bound")
 		end
-	redisplay(editor.buf)
-	end--while true
+		redisplay(editor.buf)
+	end--while not editor.quit
 end--editor_loop
 
 local function main()

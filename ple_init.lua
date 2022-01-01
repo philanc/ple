@@ -24,7 +24,8 @@ local strf = string.format
 --      or false  :: insert a TAB char (0x09) when the TAB key is pressed
 --                   eg.:  editor.tabspaces = false
 
-editor.tabspaces = 8
+--~ editor.tabspaces = 8
+editor.tabspaces = false
 
 
 -- Extension API -- when writing extensions, it is recommended to use only
