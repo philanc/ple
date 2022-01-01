@@ -22,6 +22,7 @@ PLE has been inspired by Antirez' [Kilo](https://github.com/antirez/kilo) editor
 
 ### Limitations
 
+- UTF-8: wide characters (more than one column) and right-to-left scripts are not supported.
 - no sentence- or paragraph-based movement.
 - the search and replace functions do not work with special characters, new lines and regular expressions - plain text in a line, case sensitive only.
 - no provision for automatic backup files.
