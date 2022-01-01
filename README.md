@@ -4,9 +4,9 @@ A small, self-contained text editor for the Unix console or standard terminal em
 
 ### Recent changes
 
-***UTF-8 encoding*** - PLE was initially designed to support only 8-bit character encodings (eg. pure ASCII,  Latin1, ISO-8859-x).  The latest release supporting 8-bit character encodings is  [v0.3-8bit-chars](https://github.com/philanc/ple/releases/tag/v0.3).  
+**UTF-8 encoding** - PLE was initially designed to support only 8-bit character encodings (eg. pure ASCII,  Latin1, ISO-8859-x).  The latest release supporting 8-bit character encodings is  [v0.3-8bit-chars](https://github.com/philanc/ple/releases/tag/v0.3).  
 
-PLE has been modified to support UTF-8 encoding, which is nowdays the standard encoding to support both 7-bit pure ASCII and Unicode text files.  8-bit character encodings are no longer supported.
+PLE has been modified to support UTF-8 encoding, which is nowdays the standard encoding for Unicode text files.  8-bit character encodings are no longer supported.
 
 ### Objective
 
@@ -32,7 +32,7 @@ PLE has been inspired by Antirez' [Kilo](https://github.com/antirez/kilo) editor
 - probably many others things that you would expect from a text editor!
 
 On the other hand, the editor already support:
-- a keybinding a la Emacs (but much limited!)
+- a keybinding loosely inspired by Emacs (but much limited!)
 - basic editing functions
 - basic search and replace functions (plain text only)
 - support for long lines (horizontal scroll, no provision for wrapping long lines)
@@ -73,7 +73,8 @@ Cursor movement
         ^A, ^E          go to beginning, end of line
         ^B, ^F          go backward, forward
         ^N, ^P          go to next line, previous line
-	^U, ^V          page up, page down
+        ^K, ^J          go to next word, previous word 
+        ^U, ^V          page up, page down
         ^X<             go to beginning of buffer
         ^X>             go to end of buffer
         ^S              forward search (plain text, case sensitive)
