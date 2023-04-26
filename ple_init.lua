@@ -5,7 +5,7 @@
 -- following locations:
 --	- the file which pathname is in the environment variable PLE_INIT
 --	- ./ple_init.lua
---	- ~/config/ple/ple_init.lua
+--	- ~/.config/ple/ple_init.lua
 --
 --The first file found, if any, is loaded.
 ------------------------------------------------------------------------
