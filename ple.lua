@@ -308,7 +308,7 @@ local function adjcursor(buf)
 	local cx = buf.ci - buf.li + 1
 	local cy = 1 -- box column index, ignoring horizontal scroll
 --~ 	local cy = 0 -- box column index, ignoring horizontal scroll
-	local col = buf.box.c
+	local column = buf.box.c
 	local l = buf.ll[buf.ci]
 	local cj = 1
 	for p,c in utf8.codes(l) do
@@ -324,7 +324,7 @@ local function adjcursor(buf)
 	local hs = 0 -- horizontal scroll
 	local cys = cy -- actual box column index
 	while true do
-		if cys >= col then
+		if cys >= column then
 			cys = cys - 40
 			hs = hs + 40
 		else
@@ -1075,13 +1075,13 @@ local function main()
 		fname = "unnamed"
 	end
 	-- set term in raw mode
-	local prevmode, e, m = term.savemode()
-	if not prevmode then print(prevmode, e, m); os.exit() end
+	local prevmode, exitcode, m = term.savemode()
+	if not prevmode then print(prevmode, exitcode, m); os.exit() end
 	term.setrawmode()
 	term.reset()
 	-- run the application in a protected call so we can properly reset
 	-- the tty mode and display a traceback in case of error
-	local ok, msg = xpcall(editor_loop, debug.traceback, ll, fname)
+	local ok, message = xpcall(editor_loop, debug.traceback, ll, fname)
 	-- restore terminal in a a clean state
 	term.show() -- show cursor
 	term.left(999); term.down(999)
@@ -1089,7 +1089,7 @@ local function main()
 	flush()
 	term.restoremode(prevmode)
 	if not ok then -- display traceback in case of error
-		print(msg)
+		print(message)
 		os.exit(1)
 	end
 	print("\n") -- add an extra line  after the 'exiting' msg
