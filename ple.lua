@@ -1014,20 +1014,24 @@ editor.bindings_ctlx = {  -- ^X<key>
 	[62] = e.goeot,		-- ^X >
 }--editor.bindings_ctlx
 
-local function editor_loadinitfile()
+local function editor_initfile()
+	-- Return path to PLE user configuration file, if any.
+	local initlocations = { -- Init file locations in order of priority
+		os.getenv("PLE_INIT"),
+		"./ple_init.lua",
+		(os.getenv("HOME") or "~")  .. "/.config/ple/ple_init.lua",
+	}
+	-- Return first initfile found
+	for _, initfile in pairs(initlocations) do
+	  if fileexists(initfile) then return initfile end
+	end
+	return nil -- No init file found
+end--getinitfilename
+
+local function editor_loadinitfile(initfile)
 	-- function to be executed before entering the editor loop
 	-- could be used to load a configuration/initialization file
-	local initfile = os.getenv("PLE_INIT")
-	if fileexists(initfile) then
-		return assert(loadfile(initfile))()
-	end
-	initfile = "./ple_init.lua"
-	if fileexists(initfile) then
-		return assert(loadfile(initfile))()
-	end
-	local homedir = os.getenv("HOME") or "~"
-	initfile = homedir .. "/.config/ple/ple_init.lua"
-	if fileexists(initfile) then
+	if initfile then
 		return assert(loadfile(initfile))()
 	end
 	return nil
@@ -1036,7 +1040,7 @@ end--editor_loadinitfile
 
 local function editor_loop(ll, fname)
 	editor.initmsg = "Help: F1 or ^X^H"
-	local r = editor_loadinitfile()
+	local r = editor_loadinitfile(editor_initfile())
 	style.normal()
 	e.newbuffer(nil, fname, ll);
 	  -- 1st arg is current buffer (unused for newbuffer, so nil)
