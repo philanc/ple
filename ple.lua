@@ -104,7 +104,7 @@ EOL=uchar(0xbb)   -- (Right-pointing Double Angle Quotation Mark)
 		  -- indicates that the line is longer than what is displayed
 
 -- editor is the global editor object
-editor = {
+local editor = {
 	quit = false, -- set editor.quit to true to quit editor_loop()
 	nextk = term.input(), -- the "read next key" function
 	keyname = term.keyname, -- return the displayable name of a key
@@ -1032,7 +1032,8 @@ local function editor_loadinitfile(initfile)
 	-- function to be executed before entering the editor loop
 	-- could be used to load a configuration/initialization file
 	if initfile then
-		return assert(loadfile(initfile))()
+		local env = {editor = editor, table.unpack(_G)}
+		return assert(loadfile(initfile, nil, env))()
 	end
 	return nil
 end--editor_loadinitfile
