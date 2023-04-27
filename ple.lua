@@ -40,7 +40,7 @@ end
 
 local function lines(s)
 	-- split s into a list of lines
-	lt = {}
+	local lt = {}
 	s = s .. "\n"
 	for l in string.gmatch(s, "(.-)\r?\n") do table.insert(lt, l) end
 	return lt
@@ -99,8 +99,8 @@ local MAX = buffer.MAX
 
 local tabln = 8
 local EOT = '~'   -- used to indicate that we are past the end of text
-NDC=uchar(0xfffd) -- indicates a non-displayable character
-EOL=uchar(0xbb)   -- (Right-pointing Double Angle Quotation Mark)
+local NDC=uchar(0xfffd) -- indicates a non-displayable character
+local EOL=uchar(0xbb)   -- (Right-pointing Double Angle Quotation Mark)
 		  -- indicates that the line is longer than what is displayed
 
 -- editor is the global editor object
@@ -147,7 +147,7 @@ function editor.readstr(prompt)
 	while true do
 		-- display s
 		go(editor.scrl, ulen(prompt)+1)cleareol(); outf(s)
-		k = editor.nextk()
+		local k = editor.nextk()
 		-- ignore ctrl-chars and function keys
 		if k == 8 or k == keys.del then -- backspace
 			if ulen(s) > 0 then
@@ -170,7 +170,7 @@ function editor.readchar(prompt, charpat)
 	editor.msg(prompt)
 	editor.redisplay(editor.buf) -- ensure cursor stays in buf
 	while true do
-		k = editor.nextk()
+		local k = editor.nextk()
 		if k == 7 then return nil end -- ^G - abort
 --~ 		if (k < 127) then
 --~ 			local ch = char(k)
@@ -610,7 +610,7 @@ function e.replaceagain(b)
 
 	local replall = false -- true if user selected "replace (a)ll"
 	local n = 0 -- number of replaced instances
-	function replatcur()
+	local function replatcur()
 		-- replace at cursor
 		-- (called only when editor.pat is found at cursor)
 		-- (pat and patrepl are plain text, unescaped)
@@ -619,7 +619,7 @@ function e.replaceagain(b)
 		return b:bufdel(ci, cj + #editor.pat)
 			and b:bufins(editor.patrepl)
 	end--replatcur
-	function replfn()
+	local function replfn()
 		-- this function is called each time editor.pat is found
 		-- return true to continue, nil/false to stop
 		if replall then
@@ -800,7 +800,7 @@ end--findfile
 function e.writefile(b, fname)
 	fname = fname or editor.readstr("Write to file: ")
 	if not fname then editor.msg("Aborted."); return end
-	fh, errmsg = io.open(fname, "w")
+	local fh, errmsg = io.open(fname, "w")
 	if not fh then editor.msg(errmsg); return end
 	for i = 1, #b.ll do fh:write(b.ll[i], "\n") end
 	fh:close()
@@ -1072,6 +1072,7 @@ local function main()
 	-- process argument
 	local ll, fname
 	if arg[1] then
+		local err
 		ll, err = readfile(arg[1]) -- load file as a list of lines
 		if not ll then print(err); os.exit(1) end
 		fname = arg[1]
