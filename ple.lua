@@ -678,12 +678,14 @@ function e.wipe(b, nokeep)
 	-- (default false)
 	if not b.si then
 		msg("No selection.")
-		if b:atlast() then -- add an empty line at end
-			e.goeot(b); e.nl(b); e.goup(b)
-		end
 		e.gohome(b)
 		local xi, xj
-		xi, xj = b.ci+1, 0
+		if b:atlast() then -- don't remove the newline
+			xi, xj = b:eol()
+			xj = xj + 1 -- include last character on line
+		else
+			xi, xj = b.ci+1, 0
+		end
 		if not nokeep then editor.kll = b:getlines(xi, xj) end
 		b:bufdel(xi, xj)
 		return
