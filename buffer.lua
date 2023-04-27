@@ -334,7 +334,11 @@ function buffer.op_undo(b, sl)
 	if sl.op == "del" then
 		return b:bufins(sl, true)
 	elseif sl.op == "ins" then
-		return b:bufdel(sl.ci+#sl-1, sl.cj+ulen(sl[#sl]), true)
+		if #sl == 1 then -- Insertion was limited to part of a single line
+			return b:bufdel(sl.ci+#sl-1, sl.cj+ulen(sl[#sl]), true)
+		else -- Insertion spanned multiple lines
+			return b:bufdel(sl.ci+#sl-1, ulen(sl[#sl]), true)
+		end
 	else
 		return nil, "unknown op"
 	end
