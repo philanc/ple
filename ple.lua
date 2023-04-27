@@ -729,7 +729,7 @@ function e.exiteditor(b)
 	end
 	if anyunsaved then
 		local ch = readchar(
-			"Some buffers not saved. Quit? ", "[YNQynq\r\n]")
+			"Some buffers not saved. Quit? ", "[YNyn\r\n]")
 		if ch ~= "y" and ch ~= "Y" then
 			msg("aborted.")
 			return
