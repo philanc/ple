@@ -719,17 +719,18 @@ function e.redo(b)
 end--redo
 
 function e.exiteditor(b)
-	local anyunsaved = false
+	local unsaved = 0
 	for i, bx in ipairs(editor.buflist) do
 		-- tmp buffers: if name starts with '*',
 		-- buffer is not considered as unsaved
-		if bx.filename and not bx.filename:match("^%*") then
-			anyunsaved = anyunsaved or bx.unsaved
+		if bx.filename and not bx.filename:match("^%*") and bx.unsaved then
+			unsaved = unsaved + 1
 		end
 	end
-	if anyunsaved then
-		local ch = readchar(
-			"Some buffers not saved. Quit? ", "[YNyn\r\n]")
+	if unsaved ~= 0 then
+		local readmsg = unsaved .. " buffers not saved. Quit? "
+		if unsaved == 1 then readmsg = "1 buffer not saved. Quit? " end
+		local ch = readchar(readmsg, "[YNyn\r\n]")
 		if ch ~= "y" and ch ~= "Y" then
 			msg("aborted.")
 			return
