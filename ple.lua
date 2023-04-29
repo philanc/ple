@@ -879,30 +879,7 @@ function e.test(b)
 	-- this function is just used for quick debug tests
 	-- (to be removed!)
 	--
---~ 	s = b:gettext()
---~ 	s = s:upper()
---~ 	b:settext(s)
-
-	do return  msg("str="..readstr("enter string: ")) end
-
-
---~ 	local s = b:getline()
---~ 	local ci,cj = b:getcur()
---~ 	msg("==" .. uchar(utf8.codepoint(s, uoff(s, cj))))
-
---~ 	msg("==" .. tostring(b:curch()))
-
-	-- test readchar
---~ 	while true do
---~ 		local ch = readchar("test readchar (space to quit): ", ".")
---~ 		if not ch or ch == " " then msg("aborted!"); break
---~ 		else
---~ 			e.goeot(b); e.nl(b);
---~ 			e.insert(b, strf(
---~ 			    "readchar => %d", utf8.codepoint(ch)
---~ 			))
---~ 		end
---~ 	end
+	return  msg("str="..readstr("enter string: "))
 end--test
 
 editor.helptext = [[
@@ -1047,11 +1024,7 @@ local function editor_loop(ll, fname)
 		local k = editor.nextk()
 		local kname = editor.keyname(k)
 		-- try to find an action bound to the key
-		-- first in buffer action table
-		-- then in the default editor table
-		local act = editor.buf.bindings
-			and editor.buf.bindings[k]
-			or editor.bindings[k]
+		local act = editor.bindings[k]
 		if act then
 			msg(kname)
 			editor.lastresult = act(editor.buf)
