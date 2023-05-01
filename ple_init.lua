@@ -17,25 +17,22 @@ local strf = string.format
 -- Configuration variables and editor extension API are available
 -- through the 'editor' global object.
 
--- editor.tabspaces: defines how the TAB key should be handled.
---      n:integer :: number of spaces to insert when the TAB key is pressed
---                   (according to cursor position)
---                   eg.:  editor.tabspaces = 4
+-- eapi.tabspaces: defines how the TAB key should be handled.
+--      n:integer :: number of spaces to insert when the TAB key 
+--			is pressed
+--                   	(according to cursor position)
+--                   	eg.:  editor.tabspaces = 4
 --      or false  :: insert a TAB char (0x09) when the TAB key is pressed
---                   eg.:  editor.tabspaces = false
+--                   	eg.:  editor.tabspaces = false
 
---~ editor.tabspaces = 8
-editor.tabspaces = false
+--~ eapi.tabspaces = 8
+eapi.tabspaces = false
 
+-- Extension API 
+-- ple extensions can use functions and parameters in 
+-- global table 'eapi'
 
--- Extension API -- when writing extensions, it is recommended to use only
--- functions defined in the editor.actions table (see ple.lua)
-local e = editor.actions
-
--- all editor.actions functions take a buffer object as first parameter
--- and additional parameters for some functions.
--- A common error is to call an editor.actions function without the buffer
--- object as first parameter (see examples below).
+local e = eapi.actions
 
 -- SHELL command
 -- Add a new action "line_shell" which takes the current line,
@@ -43,12 +40,12 @@ local e = editor.actions
 -- after the current line.
 
 
-local function line_shell(b)
+local function line_shell()
 	-- the function will be called with the current buffer as
 	-- the first argument. So here, b is the current buffer.
 	--
 	-- get the current line
-	local line = e.getline(b)
+	local line = e.getline()
 	-- the shell command is the content of the line
 	local cmd = line
 	-- make sure we also get stderr...
@@ -56,7 +53,7 @@ local function line_shell(b)
 	-- execute the shell command
 	local fh, err = io.popen(cmd)
 	if not fh then
-		editor.msg("newline_shell error: " .. err)
+		eapi.msg("newline_shell error: " .. err)
 		return
 	end
 	local ll = {} -- read lines into ll
@@ -66,38 +63,38 @@ local function line_shell(b)
 	fh:close()
 	-- go to end of line
 	-- (DO NOT forget the buffer parameter for all e.* functions)
-	e.goend(b)
+	e.goend()
 	-- insert a newline at the cursor
-	e.nl(b)
+	e.nl()
 	-- insert the list of lines at the cursor
 	-- e.insert() can be called with either a list of lines or a string
 	-- that may contain newlines ('\n') characters
 	-- lines should NOT contain '\n' characters
-	e.insert(b, ll)
+	e.insert(ll)
 	-- insert another newline and a separator line
-	e.nl(b)
-	e.insert(b, '---\n')
+	e.nl()
+	e.insert('---\n')
 		-- the previous line is equivalent to
-		-- e.insert(b, '---'); e.nl(b)
+		-- e.insert('---'); e.nl()
 end
 
 -- bind the line_shell function to ^X^M (or ^X-return)
-editor.bindings_ctlx[13] = line_shell
+eapi.bindings_ctlx[13] = line_shell
 
 
 -- EDIT FILE AT CURSOR
 -- assume the current line contains a filename.
 -- get the filename and open the file in a new buffer
 --
-local function edit_file_at_cursor(b)
-	local line = e.getline(b)
+local function edit_file_at_cursor()
+	local line = e.getline()
 	-- (FIXME) assume the line contains only the filename
 	local fname = line
-	e.findfile(b, fname)
+	e.findfile(fname)
 end
 
 -- bind function to ^Xe (string.byte"e" == 101)
-editor.bindings_ctlx[101] = edit_file_at_cursor -- ^Xe
+eapi.bindings_ctlx[101] = edit_file_at_cursor -- ^Xe
 
 
 -- EVAL LUA BUFFER
@@ -108,7 +105,7 @@ editor.bindings_ctlx[101] = edit_file_at_cursor -- ^Xe
 -- of the buffer in a multi-line comment.
 
 function e.eval_lua_buffer(b)
-	local msg = editor.msg
+	local msg = eapi.msg
 		-- msg(m) can be used to diplay a short message (a string)
 		-- at the last line of the terminal
 	local strf = string.format
@@ -116,11 +113,11 @@ function e.eval_lua_buffer(b)
 	-- get the number of lines in the buffer
 	-- getcur() returns the cursor position (line and column indexes)
 	-- and the number of lines in the buffer.
-	local ci, cj, ln = e.getcur(b) -- ci, cj are ignored here.
+	local ci, cj, ln = e.getcur() -- ci, cj are ignored here.
 	-- get content of the buffer
 	local t = {}
 	for i = 1, ln do
-		table.insert(t, e.getline(b, i))
+		table.insert(t, e.getline(i))
 	end
 	-- txt is the content of the buffer as a string
 	local txt = table.concat(t, "\n")
@@ -140,16 +137,15 @@ function e.eval_lua_buffer(b)
 		end
 	end
 	-- insert result in a comment at end of buffer
-	e.goeot(b)	-- go to end of buffer
-	e.nl(b) 	-- insert a newline
+	e.goeot()	-- go to end of buffer
+	e.nl() 	-- insert a newline
 	--insert result
-	e.insert(b, strf("--[[\n%s\n]]", tostring(result)))
+	e.insert(strf("--[[\n%s\n]]", tostring(result)))
 	return
+end --eval_lua_buffer
 
-
-end
 -- bind function to ^Xl  (string.byte"l" == 108)
-editor.bindings_ctlx[108] = e.eval_lua_buffer -- ^Xl
+eapi.bindings_ctlx[108] = e.eval_lua_buffer -- ^Xl
 
 
 
@@ -157,4 +153,4 @@ editor.bindings_ctlx[108] = e.eval_lua_buffer -- ^Xl
 ------------------------------------------------------------------------
 -- append some text to the initial message displayed when entering
 -- the editor
-editor.initmsg = editor.initmsg .. " - Sample ple_init.lua loaded. "
+eapi.initmsg = eapi.initmsg .. " - eapi/Sample ple_init.lua loaded. "
