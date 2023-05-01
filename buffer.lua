@@ -277,6 +277,9 @@ function buffer.bufdel(b, di, dj, no_undo)
 	local ci, cj = b:getcur()
 	local l1, l2 = b.ll[ci], b.ll[di]
 	l1 = l1:sub(1, uoff(l1, cj) - 1)
+--~ print('l1', l1)
+--~ print('l2', l2)
+--~ print('uoff #l2 dj', #l2, dj)
 	l2 = l2:sub(uoff(l2, dj))
 	if di == ci then -- delete in current line at cursor
 		b.ll[ci] = l1 .. l2
@@ -330,14 +333,15 @@ function ualpush(b, op, sl)
 end
 
 function buffer.op_undo(b, sl)
+--~ he.pp(sl)
 	b:setcur(sl.ci, sl.cj)
 	if sl.op == "del" then
 		return b:bufins(sl, true)
 	elseif sl.op == "ins" then
 		if #sl == 1 then -- Insertion was limited to part of a single line
-			return b:bufdel(sl.ci+#sl-1, sl.cj+ulen(sl[#sl]), true)
+			return b:bufdel(sl.ci, sl.cj+ulen(sl[1]), true)
 		else -- Insertion spanned multiple lines
-			return b:bufdel(sl.ci+#sl-1, ulen(sl[#sl]), true)
+			return b:bufdel(sl.ci+#sl-1, ulen(sl[#sl])+1, true)
 		end
 	else
 		return nil, "unknown op"
