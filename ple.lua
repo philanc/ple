@@ -198,11 +198,10 @@ function editor.status(m)
 	out(m); style.normal(); flush()
 end
 
-local dbgs = ""
-function editor.dbg(s)
-	dbgs = s or ""
-end
 
+-- eapi.dbgs is a short string displayed at the end of the status line
+-- (can be used for debug)
+eapi.dbgs = ""
 
 function editor.statusline()
 	local s = strf("cur=%d,%d ", editor.buf.ci, editor.buf.cj)
@@ -217,11 +216,10 @@ function editor.statusline()
 		editor.buf.filename or "unnamed",
 		editor.buf.unsaved and "*" or "",
 		eapi.tabspaces and "SP" or "TAB",
-		dbgs)
+		eapi.dbgs)
 	return s
 end--statusline
 
-local dbg = editor.dbg
 
 ------------------------------------------------------------------------
 -- screen display functions  (boxes, line display)
@@ -914,6 +912,21 @@ function e.getline(i)
 	return b.ll[i]
 end
 
+function e.gettext()
+	-- return the content of the current buffer as a string
+	local b = editor.buf
+	return table.concat(b.ll, "\n")
+end
+
+function e.settext(txt)
+	-- replace the text in the current buffer
+	-- !! it cannot be undone and it clears the undo stack !!
+	-- the cursor and display are reinitialized at the top
+	-- of the new text.
+	local b = editor.buf
+	return b:settext(txt)	
+end
+	
 function e.test()
 	-- this function is just used for quick debug tests
 	-- (to be removed!)
