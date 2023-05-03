@@ -103,11 +103,11 @@ local NDC = uchar(0xfffd) -- indicates a non-displayable character
 local EOL = uchar(0xbb)   -- (Right-pointing Double Angle Quotation Mark)
 	-- indicates that the line is longer than what is displayed
 
--- 'editor' is the main editor object. 
+-- 'core' is the main editor object. 
 --	It contains most internal structures and functions. 
---	'editor' is not visible in ple-init.lua
-local editor = {
-	quit = false, -- set editor.quit to true to quit editor_loop()
+--	'core' is not visible in ple-init.lua
+local core = {
+	quit = false, -- set core.quit to true to quit editor_loop()
 	nextk = term.input(), -- the "read next key" function
 	keyname = term.keyname, -- return the displayable name of a key
 	buflist = {},  -- list of buffers
@@ -115,12 +115,12 @@ local editor = {
 }
 
 -- buf is the current buffer
--- this is the same object as editor.buflist[editor.bufindex]
-editor.buf = {}
+-- this is the same object as core.buflist[core.bufindex]
+core.buf = {}
 
 -- style functions
 
-editor.style = {
+core.style = {
 	normal = function() color(col.normal) end,
 	status = function() color(col.red, col.bold) end,
 	msg = function() color(col.normal); color(col.green) end,
@@ -128,34 +128,34 @@ editor.style = {
 	bckg = function() color(col.black, col.bgyellow) end,
 }
 
-local style = editor.style
+local style = core.style
 
--- 'eapi' is the editor API interface. 
+-- 'editor' is the editor API interface. 
 --	It contains variables and functions that can be used
 --	in ple_init.lua
---	'eapi' must be global to be visible in ple_init.lua
-eapi = {}
+--	'editor' must be global to be visible in ple_init.lua
+editor = {}
 
 -- dialog functions
 
-function eapi.msg(m)
+function editor.msg(m)
 	-- display a message m on last screen line
-	m = pad(m, editor.scrc)
-	go(editor.scrl, 1); cleareol(); style.msg()
+	m = pad(m, core.scrc)
+	go(core.scrl, 1); cleareol(); style.msg()
 	out(m); style.normal(); flush()
 end
 
-function eapi.readstr(prompt)
+function editor.readstr(prompt)
 	-- display prompt, read a string on the last screen line
 	-- [read only utf8 printable chars - no tab or other control-chars]
 	-- [ no edition except bksp ]
 	-- if ^G then return nil
 	local s = ""
-	eapi.msg(prompt)
+	editor.msg(prompt)
 	while true do
 		-- display s
-		go(editor.scrl, ulen(prompt)+1)cleareol(); outf(s)
-		k = editor.nextk()
+		go(core.scrl, ulen(prompt)+1)cleareol(); outf(s)
+		k = core.nextk()
 		-- ignore ctrl-chars and function keys
 		if k == 8 or k == keys.del then -- backspace
 			if ulen(s) > 0 then
@@ -170,15 +170,15 @@ function eapi.readstr(prompt)
 	end--while
 end --readstr
 
-function eapi.readchar(prompt, charpat)
+function editor.readchar(prompt, charpat)
 	-- display prompt on the last screen line, read a char
 	-- if ^G then return nil
 	-- return the key as a char only if it matches charpat
 	-- ignore all non printable ascii keys and non matching chars
-	eapi.msg(prompt)
-	editor.redisplay(editor.buf) -- ensure cursor stays in buf
+	editor.msg(prompt)
+	core.redisplay(core.buf) -- ensure cursor stays in buf
 	while true do
-		k = editor.nextk()
+		k = core.nextk()
 		if k == 7 then return nil end -- ^G - abort
 --~ 		if (k < 127) then
 --~ 			local ch = char(k)
@@ -191,32 +191,34 @@ function eapi.readchar(prompt, charpat)
 	end--while
 end --readkey
 
-function editor.status(m)
+function core.status(m)
 	-- display a status string on top screen line
-	m = pad(m, editor.scrc)
+	m = pad(m, core.scrc)
 	go(1, 1); cleareol(); style.status()
 	out(m); style.normal(); flush()
 end
 
 
--- eapi.dbgs is a short string displayed at the end of the status line
+-- editor.dbgs is a short string displayed at the end of the status line
 -- (can be used for debug)
-eapi.dbgs = ""
+editor.dbgs = ""
 
-function editor.statusline()
-	local s = strf("cur=%d,%d ", editor.buf.ci, editor.buf.cj)
-	if editor.buf.si then s = s .. strf("sel=%d,%d ", editor.buf.si, editor.buf.sj) end
+function core.statusline()
+	local s = strf("cur=%d,%d ", core.buf.ci, core.buf.cj)
+	if core.buf.si then 
+		s = s .. strf("sel=%d,%d ", core.buf.si, core.buf.sj) 
+	end
 	-- uncomment the following for debug purposes
---~ 	s = s .. strf("li=%d ", editor.buf.li)
---~ 	s = s .. strf("hs=%d ", editor.buf.hs)
---~ 	s = s .. strf("ual=%d ", #editor.buf.ual)
---~ 	s = s .. strf("editor.buf=%d ", editor.bufindex)
+--~ 	s = s .. strf("li=%d ", core.buf.li)
+--~ 	s = s .. strf("hs=%d ", core.buf.hs)
+--~ 	s = s .. strf("ual=%d ", #core.buf.ual)
+--~ 	s = s .. strf("core.buf=%d ", core.bufindex)
 	s = s .. strf(
 		"[%s] (%s) %s -- Help: ^X^H -- %s",
-		editor.buf.filename or "unnamed",
-		editor.buf.unsaved and "*" or "",
-		eapi.tabspaces and "SP" or "TAB",
-		eapi.dbgs)
+		core.buf.filename or "unnamed",
+		core.buf.unsaved and "*" or "",
+		editor.tabspaces and "SP" or "TAB",
+		editor.dbgs)
 	return s
 end--statusline
 
@@ -343,7 +345,7 @@ local function adjcursor(buf)
 	end
 	if buf.chgd then return end -- (li or hs or content change)
 	-- here, assume that cursor will move within the box
-	editor.status(editor.statusline())
+	core.status(core.statusline())
 	go(buf.box.x + cx - 1, buf.box.y + cys - 1)
 	flush()
 end -- adjcursor
@@ -392,29 +394,29 @@ local function redisplay(buf)
 end --redisplay
 
 
-function editor.fullredisplay()
+function core.fullredisplay()
 	-- complete repaint of the screen
 	-- performed initially, or when a new buffer is displayed, or
 	-- when requested by the user (^L command) because the
 	-- screen is garbled or the screensize has changed (xterm, ...)
 	--
-	editor.scrl, editor.scrc = term.getscrlc()
-	-- [TMP!! editor.scrbox is a bckgnd box with a pattern to
+	core.scrl, core.scrc = term.getscrlc()
+	-- [TMP!! core.scrbox is a bckgnd box with a pattern to
 	-- visually check that edition does not overflow buf box
 	-- (this is for future multiple windows, including side by side)]
-	editor.scrbox = boxnew(1, 1, editor.scrl, editor.scrc)
+	core.scrbox = boxnew(1, 1, core.scrl, core.scrc)
 --~ 	-- debug layout
---~ 	boxfill(editor.scrbox, ' ', style.bckg)
---~ 	buf.box = boxnew(2, 2, editor.scrl-3, editor.scrc-2)
+--~ 	boxfill(core.scrbox, ' ', style.bckg)
+--~ 	buf.box = boxnew(2, 2, core.scrl-3, core.scrc-2)
 	--
 	-- regular layout
-	boxfill(editor.scrbox, ' ', style.normal)
-	editor.buf.box = boxnew(2, 1, editor.scrl-2, editor.scrc)
-	editor.buf.chgd = true
-	redisplay(editor.buf)
+	boxfill(core.scrbox, ' ', style.normal)
+	core.buf.box = boxnew(2, 1, core.scrl-2, core.scrc)
+	core.buf.chgd = true
+	redisplay(core.buf)
 end --fullredisplay
 
-editor.redisplay = redisplay
+core.redisplay = redisplay
 
 ------------------------------------------------------------------------
 -- BUFFER AND CURSOR MANIPULATION
@@ -423,37 +425,37 @@ editor.redisplay = redisplay
 ------------------------------------------------------------------------
 -- EDITOR ACTIONS
 
-eapi.actions = {}
-local e = eapi.actions
+editor.actions = {}
+local e = editor.actions
 
-local msg, readstr, readchar = eapi.msg, eapi.readstr, eapi.readchar
+local msg, readstr, readchar = editor.msg, editor.readstr, editor.readchar
 
 function e.cancel()
-	local b = editor.buf
+	local b = core.buf
 	-- do nothing. cancel selection if any
 	b.si, b.sj = nil, nil
 	b.chgd = true
 end
 
-e.redisplay = editor.fullredisplay
+e.redisplay = core.fullredisplay
 
 
-function e.gohome() editor.buf:movecur(0, -MAX) end
-function e.goend() editor.buf:movecur(0, MAX) end
-function e.gobot() editor.buf:setcur(1, 1) end
-function e.goeot() editor.buf:setcur(MAX, MAX) end
-function e.goup() editor.buf:movecur(-1, 0) end
-function e.godown() editor.buf:movecur(1, 0) end
+function e.gohome() core.buf:movecur(0, -MAX) end
+function e.goend() core.buf:movecur(0, MAX) end
+function e.gobot() core.buf:setcur(1, 1) end
+function e.goeot() core.buf:setcur(MAX, MAX) end
+function e.goup() core.buf:movecur(-1, 0) end
+function e.godown() core.buf:movecur(1, 0) end
 
 function e.goright()
-	local b = editor.buf
+	local b = core.buf
 	return 	b:ateot() 
 		or b:ateol() and b:movecur(1, -MAX)
 		or b:movecur(0, 1)
 end
 
 function e.goleft()
-	local b = editor.buf
+	local b = core.buf
 	return 	b:atbot() 
 		or b:atbol() and b:movecur(-1, MAX)
 		or b:movecur(0, -1)
@@ -465,7 +467,7 @@ local function wordchar(u) -- used by nexword, prevword
 end
 
 function e.nextword()
-	local b = editor.buf
+	local b = core.buf
 	local inw1 = wordchar(b:curcode())
 	local inw2, u
 	while true do
@@ -480,7 +482,7 @@ function e.nextword()
 end--nextword
 
 function e.prevword()
-	local b = editor.buf
+	local b = core.buf
 	e.goleft()
 	local inw1 = wordchar(b:curcode())
 	local inw2
@@ -498,12 +500,12 @@ function e.prevword()
 end--prevword
 
 function e.pgdn()
-	local b = editor.buf
+	local b = core.buf
 	b:setcur(b.ci + b.box.l - 2, b.cj)
 end
 
 function e.pgup()
-	local b = editor.buf
+	local b = core.buf
 	b:setcur(b.ci - b.box.l - 2, b.cj)
 end
 
@@ -511,7 +513,7 @@ end
 
 function e.del()
 	-- if selection, delete it. Else, delete char
-	local b = editor.buf
+	local b = core.buf
 	if b.si then
 		return e.wipe(b, true) -- do not keep in wipe list
 	end
@@ -528,13 +530,13 @@ end
 function e.insch(k)
 	-- insert char with code k
 	-- (don't remove. used by editor loop)
-	local b = editor.buf
+	local b = core.buf
 	return b:bufins(uchar(k))
 end
 
 function e.tab()
-	local b = editor.buf
-	local tn = eapi.tabspaces
+	local b = core.buf
+	local tn = editor.tabspaces
 	if not tn then -- insert a tab char
 		return b:bufins(char(9))
 	end
@@ -548,7 +550,7 @@ function e.insert(x)
 	-- insert x at cursor
 	-- x can be a string or a list of lines (a table)
 	-- if x is a string, it may contain newlines ('\n')
-	local b = editor.buf
+	local b = core.buf
 	local r, errm = b:bufins((type(x) == "string") and lines(x) or x)
 	if not r then msg(errm); return nil, errm end
 	return true
@@ -556,7 +558,7 @@ end
 
 function e.nl()
 	-- equivalent to e.insert("\n")
-	local b = editor.buf
+	local b = core.buf
 	return b:bufins({"", ""})
 end
 
@@ -572,7 +574,7 @@ function e.searchpattern(pat, plain)
 	-- the pattern and the function return true. else, the cursor
 	-- is not moved and the function returns false.
 
-	local b = editor.buf
+	local b = core.buf
 	local oci, ocj = b:getcur() -- save the original cursor position
 	e.goright()
 	while true do
@@ -594,17 +596,17 @@ function e.searchpattern(pat, plain)
 end
 
 function e.searchagain(actfn)
-	-- search editor.pat. If found, execute actfn
+	-- search core.pat. If found, execute actfn
 	-- default action is to display a message "found!")
 	-- on success, return the result of actfn() or true.
 	-- (note: search does NOT ignore case)
 
-	local b = editor.buf
-	if not editor.pat then
+	local b = core.buf
+	if not core.pat then
 		msg("no string to search")
 		return nil
 	end
-	local r = e.searchpattern(editor.pat, editor.searchplain)
+	local r = e.searchpattern(core.pat, core.searchplain)
 	if r then
 		if actfn then
 			return actfn()
@@ -618,8 +620,8 @@ function e.searchagain(actfn)
 end
 
 function e.search()
-	editor.pat = readstr("Search: ")
-	if not editor.pat then
+	core.pat = readstr("Search: ")
+	if not core.pat then
 		msg("aborted.")
 		return
 	end
@@ -628,20 +630,20 @@ end
 
 function e.replaceagain()
 
-	local b = editor.buf
+	local b = core.buf
 	local replall = false -- true if user selected "replace (a)ll"
 	local n = 0 -- number of replaced instances
 	function replatcur()
 		-- replace at cursor
-		-- (called only when editor.pat is found at cursor)
+		-- (called only when core.pat is found at cursor)
 		-- (pat and patrepl are plain text, unescaped)
 		n = n + 1  --one more replaced instance
 		local ci, cj = b:getcur()
-		return b:bufdel(ci, cj + #editor.pat)
-			and b:bufins(editor.patrepl)
+		return b:bufdel(ci, cj + #core.pat)
+			and b:bufins(core.patrepl)
 	end--replatcur
 	function replfn()
-		-- this function is called each time editor.pat is found
+		-- this function is called each time core.pat is found
 		-- return true to continue, nil/false to stop
 		if replall then
 			return replatcur()
@@ -667,13 +669,13 @@ function e.replaceagain()
 end--replaceagain
 
 function e.replace()
-	editor.pat = readstr("Search: ")
-	if not editor.pat then
+	core.pat = readstr("Search: ")
+	if not core.pat then
 		msg("aborted.")
 		return
 	end
-	editor.patrepl = readstr("Replace with: ")
-	if not editor.patrepl then
+	core.patrepl = readstr("Replace with: ")
+	if not core.patrepl then
 		msg("aborted.")
 		return
 	end
@@ -681,14 +683,14 @@ function e.replace()
 end--replace
 
 function e.mark()
-	local b = editor.buf
+	local b = core.buf
 	b.si, b.sj = b.ci, b.cj
 	msg("Mark set.")
 	b.chgd = true
 end
 
 function e.exch_mark()
-	local b = editor.buf
+	local b = core.buf
 	if b.si then
 		b.si, b.ci = b.ci, b.si
 		b.sj, b.cj = b.cj, b.sj
@@ -699,7 +701,7 @@ function e.wipe(nokeep)
 	-- wipe selection, or kill current line if no selection
 	-- if nokeep is true, deleted text is not kept in the kill list
 	-- (default false)
-	local b = editor.buf
+	local b = core.buf
 	if not b.si then
 		msg("No selection.")
 		e.gohome()
@@ -710,36 +712,36 @@ function e.wipe(nokeep)
 		else
 			xi, xj = b.ci+1, 0
 		end
-		if not nokeep then editor.kll = b:getlines(xi, xj) end
+		if not nokeep then core.kll = b:getlines(xi, xj) end
 		b:bufdel(xi, xj)
 		return
 	end
 	-- make sure cursor is at beg of selection
 	if b:markbeforecur() then e.exch_mark() end
 	local si, sj = b:getsel()
-	if not nokeep then editor.kll = b:getlines(si, sj) end
+	if not nokeep then core.kll = b:getlines(si, sj) end
 	b:bufdel(si, sj)
 	b.si = nil
 end--wipe
 
 
 function e.yank()
-	local b = editor.buf
-	if not editor.kll or #editor.kll == 0 then
+	local b = core.buf
+	if not core.kll or #core.kll == 0 then
 		msg("nothing to yank!"); return
 	end
-	return b:bufins(editor.kll)
+	return b:bufins(core.kll)
 end--yank
 
 function e.undo()
-	local b = editor.buf
+	local b = core.buf
 	if b.ualtop == 0 then msg("nothing to undo!"); return end
 	b:op_undo(b.ual[b.ualtop])
 	b.ualtop = b.ualtop - 1
 end--undo
 
 function e.redo()
-	local b = editor.buf
+	local b = core.buf
 	if b.ualtop == #b.ual then msg("nothing to redo!"); return end
 	b.ualtop = b.ualtop + 1
 	b:op_redo(b.ual[b.ualtop])
@@ -747,7 +749,7 @@ end--redo
 
 function e.exiteditor()
 	local unsaved = 0
-	for i, bx in ipairs(editor.buflist) do
+	for i, bx in ipairs(core.buflist) do
 		-- tmp buffers: if name starts with '*',
 		-- buffer is not considered as unsaved
 		if bx.filename 
@@ -767,7 +769,7 @@ function e.exiteditor()
 			return
 		end
 	end
-	editor.quit = true
+	core.quit = true
 	msg("exiting.")
 end
 
@@ -776,48 +778,48 @@ function e.newbuffer(fname, ll)
 	ll = ll or { "" } -- default is a buffer with one empty line
 	fname = fname or readstr("Buffer name: ")
 	-- try to find the buffer if it already exists
-	for i, bx in ipairs(editor.buflist) do
+	for i, bx in ipairs(core.buflist) do
 		if bx.filename == fname then
-			editor.buf = bx; editor.bufindex = i
-			editor.fullredisplay(bx)
+			core.buf = bx; core.bufindex = i
+			core.fullredisplay(bx)
 			return bx
 		end
 	end
 	-- buffer doesn't exist. create it.
 	local bx = buffer.new(ll)
-	bx.actions = editor.edit_actions
+	bx.actions = core.edit_actions
 	bx.filename = fname
 	-- insert just after the current buffer
-	local bi = editor.bufindex + 1
-	table.insert(editor.buflist, bi, bx)
-	editor.bufindex = bi
-	editor.buf = bx
-	editor.fullredisplay()
+	local bi = core.bufindex + 1
+	table.insert(core.buflist, bi, bx)
+	core.bufindex = bi
+	core.buf = bx
+	core.fullredisplay()
 	return bx
 end
 
 function e.nextbuffer()
 	-- switch to next buffer
-	local bln = #editor.buflist
-	editor.bufindex = editor.bufindex % bln + 1
-	editor.buf = editor.buflist[editor.bufindex]
-	editor.fullredisplay()
+	local bln = #core.buflist
+	core.bufindex = core.bufindex % bln + 1
+	core.buf = core.buflist[core.bufindex]
+	core.fullredisplay()
 end--nextbuffer
 
 function e.prevbuffer()
 	-- switch to previous buffer
-	local bln = #editor.buflist
+	local bln = #core.buflist
 	-- if bufindex>1, the "previous" buffer index should be bufindex-1
 	-- if bufindex==1, the "previous" buffer index should be bln
-	editor.bufindex = (editor.bufindex - 2) % bln + 1
-	editor.buf = editor.buflist[editor.bufindex]
-	editor.fullredisplay()
+	core.bufindex = (core.bufindex - 2) % bln + 1
+	core.buf = core.buflist[core.bufindex]
+	core.fullredisplay()
 end--nextbuffer
 
 function e.outbuffer()
 	-- switch to *OUT* buffer.
 	-- if already in OUT buffer, switch back to previous buffer
-	local b = editor.buf
+	local b = core.buf
 	if b.filename == "*OUT*" then return e.prevbuffer() end
 	return e.newbuffer("*OUT*")
 end --outbuffer
@@ -831,7 +833,7 @@ function e.findfile(fname)
 end--findfile
 
 function e.writefile(fname)
-	local b = editor.buf
+	local b = core.buf
 	fname = fname or readstr("Write to file: ")
 	if not fname then msg("Aborted."); return end
 	fh, errmsg = io.open(fname, "w")
@@ -844,14 +846,14 @@ function e.writefile(fname)
 end--writefile
 
 function e.savefile()
-	local b = editor.buf
+	local b = core.buf
 	e.writefile(b, b.filename)
 end--savefile
 
 function e.gotoline(lineno)
 	-- prompt for a line number, go there
 	-- if lineno is provided, don't prompt.
-	local b = editor.buf
+	local b = core.buf
 	lineno = lineno or tonumber(readstr("line number: "))
 	if not lineno then
 		msg("invalid line number.")
@@ -861,21 +863,21 @@ function e.gotoline(lineno)
 end--gotoline
 
 function e.help()
-	for i, bx in ipairs(editor.buflist) do
+	for i, bx in ipairs(core.buflist) do
 		if bx.filename == "*HELP*" then
-			editor.buf = bx; editor.bufindex = i
-			editor.fullredisplay(bx)
+			core.buf = bx; core.bufindex = i
+			core.fullredisplay(bx)
 			return
 		end
 	end -- help buffer not found, then build it.
-	return e.newbuffer("*HELP*", lines(editor.helptext))
+	return e.newbuffer("*HELP*", lines(core.helptext))
 end--help
 
 function e.prefix_ctlx()
 	-- process ^X prefix
-	local k = editor.nextk()
-	local kname = "^X-" .. editor.keyname(k)
-	local act = eapi.bindings_ctlx[k]
+	local k = core.nextk()
+	local kname = "^X-" .. core.keyname(k)
+	local act = editor.bindings_ctlx[k]
 	if not act then
 		msg(kname .. " not bound.")
 		return false
@@ -895,26 +897,26 @@ function e.getcur()
 	-- cj is in the range [0, line length]
 	-- cj == 0 when the cursor is at the beginning of the line
 	--	(ie. before the first char)
-	local b = editor.buf
+	local b = core.buf
 	return b.ci, b.cj, #b.ll
 end
 
 function e.setcur(ci, cj)
 	-- move the cursor to position ci, cj (see above)
-	editor.buf:setcur(ci, cj)
+	core.buf:setcur(ci, cj)
 end
 
 function e.getline(i)
 	-- return the i-th line of the buffer b (as a string)
 	-- if i is not provided, the current line is returned.
-	local b = editor.buf
+	local b = core.buf
 	i = i or b.ci
 	return b.ll[i]
 end
 
 function e.gettext()
 	-- return the content of the current buffer as a string
-	local b = editor.buf
+	local b = core.buf
 	return table.concat(b.ll, "\n")
 end
 
@@ -923,7 +925,7 @@ function e.settext(txt)
 	-- !! it cannot be undone and it clears the undo stack !!
 	-- the cursor and display are reinitialized at the top
 	-- of the new text.
-	local b = editor.buf
+	local b = core.buf
 	return b:settext(txt)	
 end
 	
@@ -931,11 +933,11 @@ function e.test()
 	-- this function is just used for quick debug tests
 	-- (to be removed!)
 	--
-	local b = editor.buf
+	local b = core.buf
 	return  msg("str="..readstr("enter string: "))
 end--test
 
-editor.helptext = [[
+core.helptext = [[
 
 *HELP*			-- back to the previous buffer: ^X^P
 
@@ -983,7 +985,7 @@ Misc.
 ------------------------------------------------------------------------
 -- bindings
 
-eapi.bindings = { -- actions binding for text edition
+editor.bindings = { -- actions binding for text edition
 	[0] = e.mark,		-- ^@
 	[1] = e.gohome,		-- ^A
 	[2] = e.goleft,		-- ^B
@@ -1024,9 +1026,9 @@ eapi.bindings = { -- actions binding for text edition
 	[keys.kup]    = e.goup,
 	[keys.kdown]  = e.godown,
 	[keys.kf1]    = e.help,
-}--eapi.bindings
+}--editor.bindings
 
-eapi.bindings_ctlx = {  -- ^X<key>
+editor.bindings_ctlx = {  -- ^X<key>
 	[2] = e.newbuffer,	-- ^X^B
 	[3] = e.exiteditor,	-- ^X^C
 	[6] = e.findfile,	-- ^X^F
@@ -1043,7 +1045,7 @@ eapi.bindings_ctlx = {  -- ^X<key>
 	[55] = e.replaceagain,	-- ^X 7 -&
 	[60] = e.gobot,		-- ^X <
 	[62] = e.goeot,		-- ^X >
-}--eapi.bindings_ctlx
+}--editor.bindings_ctlx
 
 local function editor_loadinitfile()
 	-- function to be executed before entering the editor loop
@@ -1066,28 +1068,28 @@ end--editor_loadinitfile
 
 
 local function editor_loop(ll, fname)
-	eapi.initmsg = "Help: F1 or ^X^H"
+	editor.initmsg = "Help: F1 or ^X^H"
 	local r = editor_loadinitfile()
 	style.normal()
 	e.newbuffer(fname, ll);
 	  -- 1st arg is current buffer (unused for newbuffer, so nil)
-	msg(eapi.initmsg)
-	redisplay(editor.buf) -- adjust cursor to beginning of buffer
-	while not editor.quit do
-		local k = editor.nextk()
-		local kname = editor.keyname(k)
+	msg(editor.initmsg)
+	redisplay(core.buf) -- adjust cursor to beginning of buffer
+	while not core.quit do
+		local k = core.nextk()
+		local kname = core.keyname(k)
 		-- try to find an action bound to the key
-		local act = eapi.bindings[k]
+		local act = editor.bindings[k]
 		if act then
 			msg(kname)
-			editor.lastresult = act()
+			core.lastresult = act()
 		elseif (k >= 32) and (k > 0xffff or k < 0xffea) then
-			editor.lastresult = e.insch(k)
+			core.lastresult = e.insch(k)
 		else
-			eapi.msg(kname .. " not bound")
+			editor.msg(kname .. " not bound")
 		end
-		redisplay(editor.buf)
-	end--while not editor.quit
+		redisplay(core.buf)
+	end--while not core.quit
 end--editor_loop
 
 local function main()

@@ -45,7 +45,7 @@ On the other hand, the editor already support:
 
 Configuration -- the editor can be configured / customized with a 
 Lua file loaded at initialization. The Lua configuration file is loaded 
-with the Lua function `loadfile`. It is executed in the environment of the editor. The `eapi` global object is visible and can be used by the configuration script.
+with the Lua function `loadfile`. It is executed in the environment of the editor. The `editor` global object is visible and can be used by the configuration script.
 
 The configuration file is looked for in sequence at the following locations:
 - the file which pathname is in the environment variable `PLE_INIT`

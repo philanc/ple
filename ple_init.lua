@@ -17,7 +17,7 @@ local strf = string.format
 -- Configuration variables and editor extension API are available
 -- through the 'editor' global object.
 
--- eapi.tabspaces: defines how the TAB key should be handled.
+-- editor.tabspaces: defines how the TAB key should be handled.
 --      n:integer :: number of spaces to insert when the TAB key 
 --			is pressed
 --                   	(according to cursor position)
@@ -25,14 +25,14 @@ local strf = string.format
 --      or false  :: insert a TAB char (0x09) when the TAB key is pressed
 --                   	eg.:  editor.tabspaces = false
 
---~ eapi.tabspaces = 8
-eapi.tabspaces = false
+--~ editor.tabspaces = 8
+editor.tabspaces = false
 
 -- Extension API 
 -- ple extensions can use functions and parameters in 
 -- global table 'eapi'
 
-local e = eapi.actions
+local e = editor.actions
 
 -- SHELL command
 -- Add a new action "line_shell" which takes the current line,
@@ -53,7 +53,7 @@ local function line_shell()
 	-- execute the shell command
 	local fh, err = io.popen(cmd)
 	if not fh then
-		eapi.msg("newline_shell error: " .. err)
+		editor.msg("newline_shell error: " .. err)
 		return
 	end
 	local ll = {} -- read lines into ll
@@ -79,7 +79,7 @@ local function line_shell()
 end
 
 -- bind the line_shell function to ^X^M (or ^X-return)
-eapi.bindings_ctlx[13] = line_shell
+editor.bindings_ctlx[13] = line_shell
 
 
 -- EDIT FILE AT CURSOR
@@ -94,7 +94,7 @@ local function edit_file_at_cursor()
 end
 
 -- bind function to ^Xe (string.byte"e" == 101)
-eapi.bindings_ctlx[101] = edit_file_at_cursor -- ^Xe
+editor.bindings_ctlx[101] = edit_file_at_cursor -- ^Xe
 
 
 -- EVAL LUA BUFFER
@@ -105,7 +105,7 @@ eapi.bindings_ctlx[101] = edit_file_at_cursor -- ^Xe
 -- of the buffer in a multi-line comment.
 
 function e.eval_lua_buffer(b)
-	local msg = eapi.msg
+	local msg = editor.msg
 		-- msg(m) can be used to diplay a short message (a string)
 		-- at the last line of the terminal
 	local strf = string.format
@@ -145,7 +145,7 @@ function e.eval_lua_buffer(b)
 end --eval_lua_buffer
 
 -- bind function to ^Xl  (string.byte"l" == 108)
-eapi.bindings_ctlx[108] = e.eval_lua_buffer -- ^Xl
+editor.bindings_ctlx[108] = e.eval_lua_buffer -- ^Xl
 
 
 
@@ -153,4 +153,4 @@ eapi.bindings_ctlx[108] = e.eval_lua_buffer -- ^Xl
 ------------------------------------------------------------------------
 -- append some text to the initial message displayed when entering
 -- the editor
-eapi.initmsg = eapi.initmsg .. " - eapi/Sample ple_init.lua loaded. "
+editor.initmsg = editor.initmsg .. " - Sample ple_init.lua loaded. "
