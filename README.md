@@ -120,7 +120,7 @@ The editor can be built as one standalone Lua file combining all the modules use
 
 It produces a Lua script `ple` that can be run from the command line:
 
-`$  ./ple [filename]
+`$  ./ple [filename]`
 
 
 ### The term module
