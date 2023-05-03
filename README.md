@@ -114,6 +114,14 @@ Misc.
 
 `lua ple.lua [filename]`
 
+The editor can be built as one standalone Lua file combining all the modules used by `ple.lua`.  Just run the Lua script `make_ple.lua` in the same directory as the project files: `ple.lua`, `buffer.lua` and `plterm.lua`:
+
+`lua make_ple.lua`
+
+It produces a Lua script `ple` that can be run from the command line:
+
+`$  ./ple [filename]
+
 
 ### The term module
 
