@@ -1066,8 +1066,19 @@ local function editor_loadinitfile()
 	return nil
 end--editor_loadinitfile
 
+function editor.error_handler(r)
+	e.outbuffer()
+	e.settext(
+		"\nAN ERROR HAS OCCURRED! \n\n" 
+		.. "It is recommended to exit the editor\n"
+		.. "(you may try to save your buffers first)\n"
+		.. string.rep("_", 72) .. "\n"
+		..  r
+	)
+end
 
 local function editor_loop(ll, fname)
+	local ok
 	editor.initmsg = "Help: F1 or ^X^H"
 	local r = editor_loadinitfile()
 	style.normal()
@@ -1082,7 +1093,16 @@ local function editor_loop(ll, fname)
 		local act = editor.bindings[k]
 		if act then
 			msg(kname)
-			core.lastresult = act()
+			if editor.error_handler then
+				ok, r = xpcall(act, debug.traceback)
+				if ok then
+					core.lastresult = r
+				else
+					editor.error_handler(r)
+				end
+			else
+				core.lastresult = act()
+			end
 		elseif (k >= 32) and (k > 0xffff or k < 0xffea) then
 			core.lastresult = e.insch(k)
 		else

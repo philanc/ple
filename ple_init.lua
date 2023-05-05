@@ -1,4 +1,3 @@
-
 -- a sample PLE configuration / extension file
 ------------------------------------------------------------------------
 -- The configuration file is looked for in sequence at the
@@ -147,10 +146,25 @@ end --eval_lua_buffer
 -- bind function to ^Xl  (string.byte"l" == 108)
 editor.bindings_ctlx[108] = e.eval_lua_buffer -- ^Xl
 
+-- Error handling:
+-- the default error handler is the function editor.error_handler(). 
+-- It is defined in ple.lua. 
+-- When an error occurs, it is call with one argument that is the Lua
+-- stack traceback.
+-- It can be redefined here, e.g.:
+-- editor.error_handler = function(tb) editor.msg("ERROR!!!") end
+-- or set to nil. In that case, on error the editor exits immediately.
+-- editor.error_handler = nil
+
+-- test error in key bindings
+local function testerr()
+	error("some key binding error...")
+end
+editor.bindings_ctlx[116] = testerr -- ^Xt
 
 
 
 ------------------------------------------------------------------------
 -- append some text to the initial message displayed when entering
 -- the editor
-editor.initmsg = editor.initmsg .. " - Sample ple_init.lua loaded. "
+editor.initmsg = editor.initmsg .. " Sample ple_init.lua loaded. "
