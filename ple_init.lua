@@ -167,4 +167,4 @@ editor.bindings_ctlx[116] = testerr -- ^Xt
 ------------------------------------------------------------------------
 -- append some text to the initial message displayed when entering
 -- the editor
-editor.initmsg = editor.initmsg .. " Sample ple_init.lua loaded. "
+editor.initmsg = editor.initmsg .. " - Sample ple_init.lua loaded. "
