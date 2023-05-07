@@ -861,6 +861,26 @@ function e.gotoline(lineno)
 	end
 end--gotoline
 
+function e.bufferinfo()
+	-- display a list of buffers with a "(*)"  if the buffer is unsaved
+	local b = core.buf
+	local bname, bunsaved
+	local bnt = {
+		"Buffers list -  ^X^P to go to previous buffer",
+		string.rep("_", 72),
+		""
+		}
+	for bname, bunsaved in pairs(e.buftable()) do
+		table.insert(bnt, 
+			strf("%s  %s", bname, bunsaved and "(*)" or ""))
+	end
+	local s = table.concat(bnt, "\n")
+	e.newbuffer("*Buffers*")
+--~ 	e.insert(s)
+--~ 	e.nl()
+	e.settext(s)
+end--bufferinfo
+
 function e.help()
 	for i, bx in ipairs(core.buflist) do
 		if bx.filename == "*HELP*" then
@@ -927,6 +947,18 @@ function e.settext(txt)
 	local b = core.buf
 	return b:settext(txt)	
 end
+
+function e.buftable()
+	-- return a table where keys are buffer names and values 
+	-- are the buffer unsaved status (boolean, true if buffer has 
+	-- been saved)
+	bt = {}
+	for i, b in ipairs(core.buflist) do
+		bt[b.filename] = b.unsaved
+	end
+	return bt
+end
+
 	
 function e.test()
 	-- this function is just used for quick debug tests
@@ -969,6 +1001,7 @@ Files, buffers
 	^X^B		switch to a named buffer or create a new buffer
 	^X^N		switch to the next buffer
 	^X^P		switch to the previous buffer
+	^X^I		display a list of buffers
 
 Misc.
 	^X^C		exit the editor
@@ -1033,6 +1066,7 @@ editor.bindings_ctlx = {  -- ^X<key>
 	[6] = e.findfile,	-- ^X^F
 	[7] = e.gotoline,	-- ^X^G
 	[8] = e.help,		-- ^X^H
+	[9] = e.bufferinfo,	-- ^X^I
 	[11] = e.killeol,	-- ^X^K
 	[14] = e.nextbuffer,	-- ^X^N
 	[16] = e.prevbuffer,	-- ^X^P
