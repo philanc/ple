@@ -515,7 +515,7 @@ function e.del()
 	-- if selection, delete it. Else, delete char
 	local b = core.buf
 	if b.si then
-		return e.wipe(b, true) -- do not keep in wipe list
+		return e.wipe(true) -- do not keep in wipe list
 	end
 	if b:ateot() then return false end
 	local ci, cj = b:getcur()
