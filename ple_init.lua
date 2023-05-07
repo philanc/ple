@@ -33,48 +33,38 @@ editor.tabspaces = false
 
 local e = editor.actions
 
--- SHELL command
+-- RUN A SHELL COMMAND
 -- Add a new action "line_shell" which takes the current line,
 -- passes it as a command to the shell and inserts the result
 -- after the current line.
 
 
+local function sh(cmd)
+	local f, r, err, succ, status, exit
+	f, err = io.popen(cmd, "r")
+	if not f then return "popen error: " .. tostring(err) end
+	r, err = f:read("a")
+	succ, exit, status = f:close()
+	if not r then return "popen read error: " .. tostring(err) end
+	if exit == 'signal' then 
+		return "process killed with signal: " .. tostring(status) 
+	end
+	return r
+end
+
+
 local function line_shell()
-	-- the function will be called with the current buffer as
-	-- the first argument. So here, b is the current buffer.
-	--
-	-- get the current line
-	local line = e.getline()
-	-- the shell command is the content of the line
-	local cmd = line
-	-- make sure we also get stderr...
+	-- the shell command is the content of the current line
+	local cmd = e.getline()  -- get the current line
+	-- make sure we also capture stderr...
 	cmd = cmd .. " 2>&1 "
 	-- execute the shell command
-	local fh, err = io.popen(cmd)
-	if not fh then
-		editor.msg("newline_shell error: " .. err)
-		return
-	end
-	local ll = {} -- read lines into ll
-	for l in fh:lines() do
-		table.insert(ll, l)
-	end
-	fh:close()
-	-- go to end of line
-	-- (DO NOT forget the buffer parameter for all e.* functions)
-	e.goend()
-	-- insert a newline at the cursor
-	e.nl()
-	-- insert the list of lines at the cursor
-	-- e.insert() can be called with either a list of lines or a string
-	-- that may contain newlines ('\n') characters
-	-- lines should NOT contain '\n' characters
-	e.insert(ll)
-	-- insert another newline and a separator line
-	e.nl()
-	e.insert('---\n')
-		-- the previous line is equivalent to
-		-- e.insert('---'); e.nl()
+	local r = sh(cmd)
+	
+	e.goend()   -- go to end of line
+	e.nl()      -- insert a newline at the cursor
+	e.insert(r)  -- insert the shell command output
+	e.insert('\n---\n') -- and a separator line
 end
 
 -- bind the line_shell function to ^X^M (or ^X-return)
@@ -96,61 +86,47 @@ end
 editor.bindings_ctlx[101] = edit_file_at_cursor -- ^Xe
 
 
--- EVAL LUA BUFFER
--- eval buffer as a Lua chunk
--- 	Beware! the chunk is evaluated **in the editor environment**
---	which can be a way to shoot oneself in the foot!
--- chunk evaluation result is inserted  at the end
+-- RUN LUA BUFFER
+-- Run the complete buffer as a Lua program.
+-- The program is run by a Lua subprocess
+-- The  is inserted  at the end
 -- of the buffer in a multi-line comment.
 
 function e.eval_lua_buffer(b)
 	local msg = editor.msg
-		-- msg(m) can be used to diplay a short message (a string)
-		-- at the last line of the terminal
+	-- msg(m) can be used to diplay a short message (a string)
+	-- at the last line of the terminal
 	local strf = string.format
+	
+	-- get buffer content as a string
+	local s = e.gettext() 
+	
+	-- pass buffer content to Lua as stdin; redirect stderr to stdout
+	local luacmd = strf("lua 2>&1 << EOT\n%s\nEOT", s)
+	local r = sh(luacmd)
+	
+--~ 	-- insert result in a Lua comment at end of buffer
+--~ 	e.goeot()	                  -- go to end of buffer
+--~ 	e.nl() 	                          -- insert a newline
+--~ 	e.insert(strf("--[[\n%s\n]]", r)) -- insert result
 
-	-- get the number of lines in the buffer
-	-- getcur() returns the cursor position (line and column indexes)
-	-- and the number of lines in the buffer.
-	local ci, cj, ln = e.getcur() -- ci, cj are ignored here.
-	-- get content of the buffer
-	local t = {}
-	for i = 1, ln do
-		table.insert(t, e.getline(i))
-	end
-	-- txt is the content of the buffer as a string
-	local txt = table.concat(t, "\n")
-	-- eval txt as a Lua chunk **in the editor environment**
-	local r, s, fn, errmsg, result
-	fn, errmsg = load(txt, "buffer", "t") -- load the Lua chunk
-	if not fn then
-		result = strf("load error: %s", errmsg)
-	else
-		pr, r, errm = pcall(fn)
-		if not pr then
-			result = strf("lua error: %s", r)
-		elseif not r then
-			result = strf("return: %s, %s", r, errmsg)
-		else
-			result = r
-		end
-	end
-	-- insert result in a comment at end of buffer
-	e.goeot()	-- go to end of buffer
-	e.nl() 	-- insert a newline
-	--insert result
-	e.insert(strf("--[[\n%s\n]]", tostring(result)))
+ 	-- insert result at the end of buffer *OUT*
+	e.newbuffer("*OUT*")
+	e.goeot()	                  -- go to end of buffer
+	e.nl() 	                          -- insert a newline
+	e.insert(strf("===\n%s\n", r)) -- insert result
 	return
 end --eval_lua_buffer
 
 -- bind function to ^Xl  (string.byte"l" == 108)
 editor.bindings_ctlx[108] = e.eval_lua_buffer -- ^Xl
 
--- Error handling:
+
+-- ERROR HANDLING:
 -- the default error handler is the function editor.error_handler(). 
 -- It is defined in ple.lua. 
--- When an error occurs, it is call with one argument that is the Lua
--- stack traceback.
+-- When an error occurs, it is called with one argument that is 
+-- the Lua stack traceback.
 -- It can be redefined here, e.g.:
 -- editor.error_handler = function(tb) editor.msg("ERROR!!!") end
 -- or set to nil. In that case, on error the editor exits immediately.
