@@ -781,7 +781,7 @@ function e.newbuffer(fname, ll)
 	for i, bx in ipairs(core.buflist) do
 		if bx.filename == fname then
 			core.buf = bx; core.bufindex = i
-			core.fullredisplay(bx)
+			core.fullredisplay()
 			return bx
 		end
 	end
@@ -865,7 +865,7 @@ function e.help()
 	for i, bx in ipairs(core.buflist) do
 		if bx.filename == "*HELP*" then
 			core.buf = bx; core.bufindex = i
-			core.fullredisplay(bx)
+			core.fullredisplay()
 			return
 		end
 	end -- help buffer not found, then build it.
