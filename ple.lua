@@ -951,7 +951,7 @@ end
 function e.buftable()
 	-- return a table where keys are buffer names and values 
 	-- are the buffer unsaved status (boolean, true if buffer has 
-	-- been saved)
+	-- been modified since last save)
 	bt = {}
 	for i, b in ipairs(core.buflist) do
 		bt[b.filename] = b.unsaved
