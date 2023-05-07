@@ -846,8 +846,7 @@ function e.writefile(fname)
 end--writefile
 
 function e.savefile()
-	local b = core.buf
-	e.writefile(b, b.filename)
+	e.writefile(core.buf.filename)
 end--savefile
 
 function e.gotoline(lineno)
