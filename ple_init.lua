@@ -89,10 +89,10 @@ editor.bindings_ctlx[101] = edit_file_at_cursor -- ^Xe
 -- RUN LUA BUFFER
 -- Run the complete buffer as a Lua program.
 -- The program is run by a Lua subprocess
--- The  is inserted  at the end
+-- The subprocess standard output is inserted  at the end
 -- of the buffer in a multi-line comment.
 
-function e.eval_lua_buffer(b)
+function e.eval_lua_buffer()
 	local msg = editor.msg
 	-- msg(m) can be used to diplay a short message (a string)
 	-- at the last line of the terminal
@@ -106,14 +106,14 @@ function e.eval_lua_buffer(b)
 	local r = sh(luacmd)
 	
 --~ 	-- insert result in a Lua comment at end of buffer
---~ 	e.goeot()	                  -- go to end of buffer
+--~ 	e.goeot()	                  -- go to end of text
 --~ 	e.nl() 	                          -- insert a newline
 --~ 	e.insert(strf("--[[\n%s\n]]", r)) -- insert result
 
  	-- insert result at the end of buffer *OUT*
 	e.newbuffer("*OUT*")
-	e.goeot()	                  -- go to end of buffer
-	e.nl() 	                          -- insert a newline
+	e.goeot()	               -- go to end of text
+	e.nl() 	                       -- insert a newline
 	e.insert(strf("===\n%s\n", r)) -- insert result
 	return
 end --eval_lua_buffer
