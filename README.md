@@ -108,6 +108,7 @@ Misc.
         ^X^Z            redo 
         ^L              redisplay the screen (useful if the screen was 
                         garbled or its dimensions changed)
+
         F1, ^X^H        this help text
 
 ```
