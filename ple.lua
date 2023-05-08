@@ -816,11 +816,11 @@ function e.prevbuffer()
 	core.fullredisplay()
 end--nextbuffer
 
-function e.outbuffer()
+function e.outbuffer(notoggle)
 	-- switch to *OUT* buffer.
 	-- if already in OUT buffer, switch back to previous buffer
 	local b = core.buf
-	if b.filename == "*OUT*" then return e.prevbuffer() end
+	if b.filename == "*OUT*" and not notoggle then return e.prevbuffer() end
 	return e.newbuffer("*OUT*")
 end --outbuffer
 
@@ -1100,13 +1100,14 @@ local function editor_loadinitfile()
 	return nil
 end--editor_loadinitfile
 
-function editor.error_handler(r)
-	e.outbuffer()
-	e.settext(
-		"\nAN ERROR HAS OCCURRED! \n\n" 
+local function default_error_handler(r)
+	e.outbuffer(true)
+	e.goeot()
+	e.insert(
+		"\n" .. string.rep("_", 72) .. "\n\n"
+		.. "AN ERROR HAS OCCURRED! \n\n"
 		.. "It is recommended to exit the editor\n"
-		.. "(you may try to save your buffers first)\n"
-		.. string.rep("_", 72) .. "\n"
+		.. "(you may try to save your buffers first)\n\n"
 		..  r
 	)
 end
@@ -1127,15 +1128,13 @@ local function editor_loop(ll, fname)
 		local act = editor.bindings[k]
 		if act then
 			msg(kname)
-			if editor.error_handler then
-				ok, r = xpcall(act, debug.traceback)
-				if ok then
-					core.lastresult = r
-				else
-					editor.error_handler(r)
-				end
+			ok, r = xpcall(act, debug.traceback)
+			if ok then
+				core.lastresult = r
+			elseif editor.error_handler then
+				editor.error_handler(r)
 			else
-				core.lastresult = act()
+				default_error_handler(r)
 			end
 		elseif (k >= 32) and (k > 0xffff or k < 0xffea) then
 			core.lastresult = e.insch(k)
