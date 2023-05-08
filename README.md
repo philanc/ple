@@ -76,19 +76,19 @@ Cursor movement
         ^A, ^E          go to beginning, end of line
         ^B, ^F          go backward, forward
         ^N, ^P          go to next line, previous line
-        ^K, ^J          go to next word, previous word 
+        ^K, ^J          go to next word, previous word
         ^U, ^V          page up, page down
         ^X<             go to beginning of buffer
         ^X>             go to end of buffer
         ^S              forward search (plain text, case sensitive)
         ^R              search again (string previously entered with ^S)
         ^X^G            prompt for a line number, go there
-  
+
 Edition
         ^D, Delete      delete character at cursor
         ^H, bcksp       delete previous character
         ^space, ^@      mark  (set beginning of selection)
-        ^W		wipe (cut selection or cut line if no selection)
+        ^W              wipe (cut selection or cut line if no selection)
         ^Y              yank (paste)
         ^X5             replace
         ^X7             replace again (with same strings)
@@ -97,18 +97,20 @@ Files, buffers
         ^X^F            prompt for a filename, read the file in a new buffer
         ^X^W            prompt for a filename, write the current buffer
         ^X^S            save the current buffer
-        ^X^B            create a new, empty buffer
+        ^X^B            switch to a named buffer or create a new buffer
         ^X^N            switch to the next buffer
         ^X^P            switch to the previous buffer
+        ^X^I            display a list of buffers
 
 Misc.
         ^X^C            exit the editor
         ^G              abort the current command
-        ^Z              undo 
-        ^X^Z            redo 
-        ^L              redisplay the screen (useful if the screen was 
-                        garbled or its dimensions changed)
-
+        ^Z              undo
+        ^X^Z            redo
+        ^O              switch back and forth between the current buffer
+                        and the *OUT* buffer
+        ^L              redisplay the screen (useful if the screen was
+                        garbled        or its dimensions changed)
         F1, ^X^H        this help text
 
 ```
