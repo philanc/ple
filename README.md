@@ -54,6 +54,8 @@ The configuration file is looked for in sequence at the following locations:
 
 The first file found, if any, is loaded. 
 
+The *OUT* buffer is an ephemeral buffer that can be used as a scratchpad, as a sort of extended clipboard, and also to receive the output of programs launched by the editor from the current buffer. In addition, any errors ple encounters while executing key-bindings are reported in the *OUT* buffer.
+
 A sample `ple_init.lua` file is provided. It defines an editor command to execute the current line as a shell command and insert the result in the current buffer at the cursor.
 
 --
