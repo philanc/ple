@@ -1102,11 +1102,12 @@ end--editor_loadinitfile
 
 function editor.error_handler(r)
 	e.outbuffer(true)
-	e.settext(
-		"\nAN ERROR HAS OCCURRED! \n\n" 
+	e.goeot()
+	e.insert(
+		"\n" .. string.rep("_", 72) .. "\n\n"
+		.. "AN ERROR HAS OCCURRED! \n\n"
 		.. "It is recommended to exit the editor\n"
-		.. "(you may try to save your buffers first)\n"
-		.. string.rep("_", 72) .. "\n"
+		.. "(you may try to save your buffers first)\n\n"
 		..  r
 	)
 end
