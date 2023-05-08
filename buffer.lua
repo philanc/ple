@@ -307,7 +307,7 @@ function buffer.settext(b, txt)
 	b.chgd = true
 	b.unsaved = true
 	b.ci = 1 -- line index
-	b.cj = 0 -- cursor offset
+	b.cj = 1 -- cursor offset
 	return true
 end--settext
 
