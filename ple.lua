@@ -816,11 +816,11 @@ function e.prevbuffer()
 	core.fullredisplay()
 end--nextbuffer
 
-function e.outbuffer()
+function e.outbuffer(notoggle)
 	-- switch to *OUT* buffer.
 	-- if already in OUT buffer, switch back to previous buffer
 	local b = core.buf
-	if b.filename == "*OUT*" then return e.prevbuffer() end
+	if b.filename == "*OUT*" and not notoggle then return e.prevbuffer() end
 	return e.newbuffer("*OUT*")
 end --outbuffer
 
@@ -1102,7 +1102,7 @@ local function editor_loadinitfile()
 end--editor_loadinitfile
 
 function editor.error_handler(r)
-	e.outbuffer()
+	e.outbuffer(true)
 	e.settext(
 		"\nAN ERROR HAS OCCURRED! \n\n" 
 		.. "It is recommended to exit the editor\n"
