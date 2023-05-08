@@ -1100,7 +1100,7 @@ local function editor_loadinitfile()
 	return nil
 end--editor_loadinitfile
 
-function editor.error_handler(r)
+local function default_error_handler(r)
 	e.outbuffer(true)
 	e.goeot()
 	e.insert(
@@ -1128,15 +1128,13 @@ local function editor_loop(ll, fname)
 		local act = editor.bindings[k]
 		if act then
 			msg(kname)
-			if editor.error_handler then
-				ok, r = xpcall(act, debug.traceback)
-				if ok then
-					core.lastresult = r
-				else
-					editor.error_handler(r)
-				end
+			ok, r = xpcall(act, debug.traceback)
+			if ok then
+				core.lastresult = r
+			elseif editor.error_handler then
+				editor.error_handler(r)
 			else
-				core.lastresult = act()
+				default_error_handler(r)
 			end
 		elseif (k >= 32) and (k > 0xffff or k < 0xffea) then
 			core.lastresult = e.insch(k)
