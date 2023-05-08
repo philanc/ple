@@ -1101,7 +1101,7 @@ local function editor_loadinitfile()
 end--editor_loadinitfile
 
 function editor.error_handler(r)
-	e.outbuffer()
+	e.newbuffer("*OUT*")
 	e.goeot()
 	e.insert(
 		"\n" .. string.rep("_", 72) .. "\n\n"
