@@ -1008,8 +1008,7 @@ Misc.
 	^G		abort the current command
 	^Z		undo
 	^X^Z		redo
-	^O		switch back and forth between the current buffer
-			and the *OUT* buffer
+	^O		toggle between the current buffer and *OUT*
 	^L		redisplay the screen (useful if the screen was
 			garbled	or its dimensions changed)
 	F1, ^X^H	this help text
