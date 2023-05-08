@@ -134,7 +134,7 @@ local style = core.style
 --	It contains variables and functions that can be used
 --	in ple_init.lua
 --	'editor' must be global to be visible in ple_init.lua
-editor = {}
+local editor = {}
 
 -- dialog functions
 
@@ -1086,17 +1086,18 @@ local function editor_loadinitfile()
 	-- function to be executed before entering the editor loop
 	-- could be used to load a configuration/initialization file
 	local initfile = os.getenv("PLE_INIT")
+	local env = {editor = editor, table.unpack(_G)}
 	if fileexists(initfile) then
-		return assert(loadfile(initfile))()
+		return assert(loadfile(initfile, nil, env))()
 	end
 	initfile = "./ple_init.lua"
 	if fileexists(initfile) then
-		return assert(loadfile(initfile))()
+		return assert(loadfile(initfile, nil, env))()
 	end
 	local homedir = os.getenv("HOME") or "~"
 	initfile = homedir .. "/.config/ple/ple_init.lua"
 	if fileexists(initfile) then
-		return assert(loadfile(initfile))()
+		return assert(loadfile(initfile, nil, env))()
 	end
 	return nil
 end--editor_loadinitfile
